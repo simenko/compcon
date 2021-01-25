@@ -1,52 +1,40 @@
 import { iConfigLogger } from './index'
 
-export interface iConfigReader {
+export interface iConfigGetter {
     (path: string): unknown
 }
 
-export interface iWrappedReader {
-    (path: string, logger: iConfigLogger, get: iConfigReader): Promise<unknown>
-}
 export interface iReader {
-    (path: string, logger: iConfigLogger, get: iConfigReader, ...options: unknown[]): Promise<unknown> | unknown
+    (path: string, logger: iConfigLogger, get: iConfigGetter): Promise<unknown>
 }
 
-export interface iReaderCreator {
-    (...options: unknown[]): iWrappedReader
-}
-
-export interface iCompositeReaderCreator {
-    (...readersOrValues: unknown[]): iWrappedReader
-}
-
-export interface iEnvReaderCreator {
-    (envVarName?: string): iWrappedReader
-}
-
-export interface iConfigReaderCreator {
-    (configPath: string): iWrappedReader
-}
-
-export const composite: iReader = async function composite(path, logger, get, ...readersOrValues: []) {
-    for (const readerOrValue of readersOrValues) {
-        if (typeof readerOrValue !== 'function') {
-            return readerOrValue
-        }
-        try {
-            const value = await (readerOrValue as iReader)(path, logger, get)
-            if (value !== undefined) {
-                return value
+export const composite = (...readersOrValues: unknown[]): iReader =>
+    async function composite(path, logger, get) {
+        for (const readerOrValue of readersOrValues) {
+            if (typeof readerOrValue !== 'function') {
+                return readerOrValue
             }
-        } catch (e) {
-            logger.debug(
-                `Reader ${(readerOrValue as iReader).name} could not read value at ${path}. Reason: ${e.message}`,
-                e,
-            )
+            try {
+                const value = await (readerOrValue as iReader)(path, logger, get)
+                if (value !== undefined) {
+                    return value
+                }
+            } catch (e) {
+                logger.debug(
+                    `Reader ${(readerOrValue as iReader).name} could not read value at ${path}. Reason: ${e.message}`,
+                    e,
+                )
+            }
         }
+        return undefined
     }
-    return undefined
-}
 
-export const env: iReader = function env(path, logger, get, envVarName: unknown) {
-    return process.env[(envVarName as string) || path.replace('.', '_').toUpperCase()]
-}
+export const env = (envVarName?: string): iReader =>
+    async function env(path): Promise<unknown> {
+        return process.env[(envVarName as string) || path.replace('.', '_').toUpperCase()]
+    }
+
+export const get = (configPath: string): iReader =>
+    async function get(_, __, get): Promise<unknown> {
+        return get(configPath)
+    }

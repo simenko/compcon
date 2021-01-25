@@ -1,6 +1,6 @@
 import path from 'path'
-import { merge, get, set } from 'lodash'
-import { iWrappedReader, iReader, composite, iConfigReader } from './readers'
+import { merge as _merge, get as _get, set as _set } from 'lodash'
+import { iReader } from './readers'
 
 type pojo = { [key: string]: unknown }
 
@@ -15,13 +15,7 @@ export interface iConfig {
 }
 
 export class Config implements iConfig {
-    constructor(readers: iReader[] = [], public readonly logger: iConfigLogger = console) {
-        ;[composite, ...readers].forEach(
-            (reader) =>
-                (this.readerCreators[reader.name] = (...options: unknown[]) =>
-                    Config.prepareReader(reader, ...options)),
-        )
-    }
+    constructor(public readonly logger: iConfigLogger = console) {}
 
     public async load(configDirectory: string, scenarioNames: string[] = []): Promise<void> {
         if (this.isLoading) {
@@ -33,14 +27,14 @@ export class Config implements iConfig {
             const scenarios = await Promise.all(
                 scenarioFilenames.map(async (filename) =>
                     import(filename).then((module) => {
-                        const scenario = module.default(this.readerCreators)
+                        const scenario = module.default
                         this.logger.debug(`${filename} scenario is loaded: `, scenario)
                         return scenario
                     }),
                 ),
             )
 
-            this.config = merge({}, ...scenarios)
+            this.config = _merge({}, ...scenarios)
             this.logger.debug('Config scenario is: ', this.config)
 
             this.compile()
@@ -55,34 +49,26 @@ export class Config implements iConfig {
         if (this.isLoading) {
             throw new Error('Using "get()" method is not allowed until the configuration is fully loaded.')
         }
-        return get(this.config, path)
+        return _get(this.config, path)
     }
 
     private getUnsafe(path: string): unknown | Promise<unknown> {
-        const node = get(this.config, path)
+        const node = _get(this.config, path)
         if (typeof node === 'function') {
-            this.read(path, node as iWrappedReader)
+            this.invokeReader(path, node as iReader)
         }
-        return get(this.config, path)
+        return _get(this.config, path)
     }
 
     private pendingAsyncNodes: Promise<unknown>[] = []
     private isLoading = false
     private config: pojo = {}
-    private readerCreators: { [key: string]: (...options: unknown[]) => iWrappedReader | iConfigReader } = {
-        get: (...options: unknown[]) => {
-            const boundGetUnsafe = this.getUnsafe.bind(this)
-            return async function get(latePath: string) {
-                return boundGetUnsafe((options[0] as string) || latePath)
-            }
-        },
-    }
 
     private compile(configSubtree = this.config, pathPrefix = ''): void {
         Object.entries(configSubtree).forEach(([nodeName, node]) => {
             const path = pathPrefix ? `${pathPrefix}.${nodeName}` : nodeName
             if (typeof node === 'function') {
-                this.read(path, node as iWrappedReader)
+                this.invokeReader(path, node as iReader)
             }
             if (Array.isArray(node)) {
                 return
@@ -93,23 +79,12 @@ export class Config implements iConfig {
         })
     }
 
-    private read(path: string, reader: iWrappedReader): void {
+    private invokeReader(path: string, reader: iReader): void {
         const pendingValue = reader(path, this.logger, this.getUnsafe.bind(this)).then((value) => {
-            set(this.config, path, value)
+            _set(this.config, path, value)
             return value
         })
-        set(this.config, path, pendingValue)
+        _set(this.config, path, pendingValue)
         this.pendingAsyncNodes.push(pendingValue)
-    }
-
-    private static prepareReader(reader: iReader, ...options: unknown[]): iWrappedReader {
-        const read: iWrappedReader = async function (path, logger, get: iConfigReader) {
-            return Promise.resolve(reader(path, logger, get, ...options)).then((value) => {
-                logger.debug(`Reader ${reader.name} has read ${value} at ${path}.`)
-                return value
-            })
-        }
-        Object.defineProperty(read, 'name', { value: reader.name })
-        return read
     }
 }

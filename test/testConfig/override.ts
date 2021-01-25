@@ -1,9 +1,7 @@
-export default function () {
-    return {
-        db: {
-            url: 'localdb',
-            user: 'root',
-            password: '',
-        },
-    }
+export default {
+    db: {
+        url: 'localdb',
+        user: 'root',
+        password: '',
+    },
 }
