@@ -1,0 +1,6 @@
+{
+  "appName": "test-json",
+  "vault": {
+    "url": "jsonVault"
+  }
+}

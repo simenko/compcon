@@ -1,7 +1,7 @@
 import { iConfigLogger } from './index'
 
 export interface iConfigGetter {
-    (path: string): unknown
+    (path: string): Promise<unknown>
 }
 
 export interface iReader {
