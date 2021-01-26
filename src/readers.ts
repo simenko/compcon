@@ -8,8 +8,8 @@ export interface iReader {
     (path: string, logger: iConfigLogger, get: iConfigGetter): Promise<unknown>
 }
 
-export const composite = (...readersOrValues: unknown[]): iReader =>
-    async function composite(path, logger, get) {
+export const firstOf = (...readersOrValues: unknown[]): iReader =>
+    async function firstOf(path, logger, get) {
         for (const readerOrValue of readersOrValues) {
             if (typeof readerOrValue !== 'function') {
                 return readerOrValue
