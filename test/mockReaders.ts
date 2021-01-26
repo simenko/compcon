@@ -1,4 +1,4 @@
-import { iReader } from '../src/readers'
+import { iReader } from '../src'
 
 export const vault = (vaultPath: string): iReader =>
     async function vault(path: string, logger, get) {

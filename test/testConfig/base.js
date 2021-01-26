@@ -1,4 +1,4 @@
-const { composite, env } = require('../../src/readers')
+const { composite, env } = require('../../src')
 
 module.exports = {
     db: {},

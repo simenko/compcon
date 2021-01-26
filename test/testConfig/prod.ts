@@ -1,4 +1,4 @@
-import { get } from '../../src/readers'
+import { get } from '../../src'
 import { vault } from '../mockReaders'
 
 export default {

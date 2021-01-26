@@ -1,4 +1,4 @@
-import { firstOf, env } from '../../src/readers'
+import { firstOf, env } from '../../src'
 
 export default {
     db: {},

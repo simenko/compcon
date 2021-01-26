@@ -1,4 +1,6 @@
-import { iConfigLogger } from './index'
+import { iConfigLogger } from './Config'
+import parseArgs from 'minimist'
+const args = parseArgs(process.argv.slice(2))
 
 export interface iConfigGetter {
     (path: string): Promise<unknown>
@@ -7,6 +9,21 @@ export interface iConfigGetter {
 export interface iReader {
     (path: string, logger: iConfigLogger, get: iConfigGetter): Promise<unknown>
 }
+
+export const env = (envVarName?: string): iReader =>
+    async function env(path): Promise<unknown> {
+        return process.env[(envVarName as string) || path.replace('.', '_').toUpperCase()]
+    }
+
+export const get = (configPath: string): iReader =>
+    async function get(_, __, get): Promise<unknown> {
+        return get(configPath)
+    }
+
+export const arg = (argName?: string): iReader =>
+    async function arg(path): Promise<unknown> {
+        return args[(argName as string) || path.replace('.', '_')]
+    }
 
 export const firstOf = (...readersOrValues: unknown[]): iReader =>
     async function firstOf(path, logger, get) {
@@ -29,12 +46,7 @@ export const firstOf = (...readersOrValues: unknown[]): iReader =>
         return undefined
     }
 
-export const env = (envVarName?: string): iReader =>
-    async function env(path): Promise<unknown> {
-        return process.env[(envVarName as string) || path.replace('.', '_').toUpperCase()]
-    }
-
-export const get = (configPath: string): iReader =>
-    async function get(_, __, get): Promise<unknown> {
-        return get(configPath)
+export const conventional = (defaultValue: unknown): iReader =>
+    async function conventional(path, logger, get) {
+        return firstOf(arg(), env(), defaultValue)(path, logger, get)
     }

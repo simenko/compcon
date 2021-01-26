@@ -1,9 +1,9 @@
-import { firstOf, env, get } from '../../src/readers'
+import { firstOf, env, get, conventional, arg } from '../../src'
 
 export default {
     db: {
         url: firstOf(env('DB'), get('nested.path'), 'mysqldb'),
-        user: env(),
-        password: env(),
+        user: conventional('defaultUser'),
+        password: arg(),
     },
 }

@@ -1,4 +1,4 @@
-import { POJO } from './index'
+import { POJO } from './Config'
 
 export interface iLoader {
     (filename: string): Promise<POJO>
