@@ -1,7 +1,8 @@
 export default {
     db: {
-        url: 'localdb',
+        url: null,
         user: 'root',
         password: '',
     },
+    vault: '{"url":"111111111111111"}',
 }

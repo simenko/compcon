@@ -1,17 +1,17 @@
 import { POJO } from './Config'
 
-export interface iLoader {
+export interface iFileLoader {
     (filename: string): Promise<POJO>
 }
 
-export const ts: iLoader = async function ts(filename) {
+export const ts: iFileLoader = async function ts(filename) {
     return import(filename).then((module) => module.default)
 }
 
-export const js: iLoader = async function js(filename) {
+export const js: iFileLoader = async function js(filename) {
     return import(filename).then((module) => module.default)
 }
 
-export const json: iLoader = async function json(filename) {
+export const json: iFileLoader = async function json(filename) {
     return import(filename).then((module) => module.default)
 }

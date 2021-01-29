@@ -1,7 +1,11 @@
-import { iReader } from '../src'
+import { withTransformers, iTransformer } from '../src'
 
-export const vault = (vaultPath: string): iReader =>
-    async function vault(path: string, logger, get) {
+export const vault = (vaultPath?: unknown, customTransformer?: iTransformer) => {
+    if (typeof vaultPath !== 'string') {
+        throw new Error(`Vault path must be a string, got ${typeof vaultPath} instead.`)
+    }
+
+    return withTransformers(async function vault(path: string, logger, get) {
         const vaultUrl = await get('vault.url')
         if (!vaultUrl) {
             throw new Error('Could not connect to vault.')
@@ -9,4 +13,5 @@ export const vault = (vaultPath: string): iReader =>
 
         logger.info(`Connected to ${vaultUrl} taken from ${vaultPath}`)
         return path + vaultUrl
-    }
+    }, customTransformer)
+}

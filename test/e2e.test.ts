@@ -3,8 +3,8 @@ import { Config } from '../src'
 
 const config = new Config()
 
-describe('Config scenarios loading', () => {
-    it('Should load config scenarios in order', async () => {
-        await config.load(path.resolve(__dirname, 'testConfig'), ['base', 'dev'])
+describe('Config layers loading', () => {
+    it('Should load config layers in order', async () => {
+        await config.load(['base', 'prod'], path.resolve(__dirname, 'testConfig'))
     })
 })

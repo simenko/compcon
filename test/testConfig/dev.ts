@@ -1,9 +1,9 @@
-import { firstOf, env, get, conventional, arg } from '../../src'
+import { firstOf, env, get, arg } from '../../src'
 
 export default {
     db: {
-        url: firstOf(env('DB'), get('nested.path'), 'mysqldb'),
-        user: conventional('defaultUser'),
+        url: firstOf([env('DB'), get('nested.path'), 'mysqldb']),
+        user: 'defaultUser',
         password: arg(),
     },
 }

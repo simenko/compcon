@@ -1,4 +1,4 @@
-import { get } from '../../src'
+import { get, env } from '../../src'
 import { vault } from '../mockReaders'
 
 export default {
@@ -10,4 +10,7 @@ export default {
     dependent: {
         onDb: get('db.url'),
     },
+    d2: get('dependent.onDb'),
+    d3: get('d2', (value) => String(value) + 'zzzzzzzzzzzzzz'),
+    vault: env(),
 }

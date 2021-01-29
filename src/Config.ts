@@ -1,77 +1,43 @@
-import path from 'path'
-import { readdir } from 'fs'
-import { promisify } from 'util'
-import { merge as _merge, get as _get, has as _has } from 'lodash'
-import { iLoader, ts, js, json } from './loaders'
-import compile from './compiler'
+import { performance } from 'perf_hooks'
+import { EventEmitter } from 'events'
+import { get as _get, has as _has } from 'lodash'
+import { Compiler } from './Compiler'
+import { ConfigLoader } from './ConfigLoader'
 
 export type POJO = { [key: string]: unknown }
 
 export interface iConfigLogger {
-    info(message?: any, ...optionalParams: any[]): void
-    debug(message?: any, ...optionalParams: any[]): void
+    info(message?: unknown, ...optionalParams: unknown[]): void
+    debug(message?: unknown, ...optionalParams: unknown[]): void
 }
 
 export interface iConfigValidator {
     (config: POJO): POJO
 }
 
-export interface iConfig {
-    load(configDirectory: string, scenarios: (string | POJO)[], amend?: boolean): Promise<void>
-    get(path?: string): unknown
-    has(path: string): boolean
-}
-
-export class Config implements iConfig {
+export class Config extends EventEmitter {
+    private scenario: POJO = {}
+    private config: POJO = {}
     constructor(
         private readonly logger: iConfigLogger = console,
-        private readonly validate: iConfigValidator = (config) => config,
-        private readonly loaders: iLoader[] = [json, js, ts],
-    ) {}
+        private readonly loader: ConfigLoader = new ConfigLoader(logger),
+        private readonly compiler: Compiler = new Compiler(logger),
+    ) {
+        super()
+    }
 
-    public async load(configDirectory: string, scenarios: (string | POJO)[] = [], amend = false): Promise<void> {
-        let configDirFileList: string[]
-        if (scenarios.some((scenario: string | POJO) => typeof scenario === 'string')) {
-            configDirFileList = await promisify(readdir)(configDirectory)
-        }
-        const loadedScenarios = await Promise.all(
-            scenarios.map(async (filenameOrSubtree) => {
-                if (typeof filenameOrSubtree === 'object') {
-                    return filenameOrSubtree
-                }
-                const scenarioFilenames = configDirFileList.filter(
-                    (filename) => filename.replace(path.extname(filename), '') === filenameOrSubtree,
-                )
-                if (!scenarioFilenames.length) {
-                    this.logger.debug(`Could not find scenario ${filenameOrSubtree}`)
-                    return {}
-                }
-                const scenarioTypes = scenarioFilenames.map((filename) => path.extname(filename).replace('.', ''))
-                const loader = this.loaders.find((loader) => scenarioTypes.includes(loader.name))
-                if (!loader) {
-                    throw new Error(`Could not find loader for any of the ${scenarioFilenames}`)
-                }
-                const scenarioPath = path.join(
-                    configDirectory,
-                    String(scenarioFilenames.find((filename) => filename.endsWith(`.${loader.name}`))),
-                )
-                const scenario = await loader(scenarioPath)
-                this.logger.debug(`${scenarioPath} scenario is loaded: `, scenario)
-                return scenario
-            }),
-        )
+    public async load(layers: (string | POJO)[] = [], configDirectory: string = '', amend = false): Promise<void> {
+        const start = performance.now()
+        this.scenario = await this.loader.load(layers, configDirectory, amend)
+        const loaded = performance.now()
+        this.logger.debug(`Config scenario loaded in: ${loaded - start} ms: `, this.scenario)
 
-        this.scenario = _merge(amend ? this.scenario : {}, ...loadedScenarios)
-        this.logger.debug('Config scenario is: ', this.scenario)
-
-        this.config = this.validate(await compile(this.scenario, this.logger))
-        this.logger.debug(`Configuration compiled: `, this.config)
+        this.config = await this.compiler.compile(this.scenario)
+        this.emit('load')
+        this.logger.debug(`Configuration compiled in ${(performance.now() - loaded).toPrecision(6)} ms: `, this.config)
     }
 
     public get(path: string = '') {
-        if (!this.config) {
-            throw new Error('Using "get()" method is not allowed until the configuration is fully loaded.')
-        }
         if (!this.has(path)) {
             throw new Error(`Could not find path ${path} in the config`)
         }
@@ -81,7 +47,4 @@ export class Config implements iConfig {
     public has(path: string) {
         return !path || _has(this.config, path)
     }
-
-    private scenario: POJO = {}
-    private config: POJO = {}
 }

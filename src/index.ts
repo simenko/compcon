@@ -1,3 +1,4 @@
-export { iConfig, iConfigLogger, iConfigValidator, Config } from './Config'
-export { iLoader, ts, js, json } from './loaders'
-export { iReader, arg, env, get, firstOf, conventional } from './readers'
+export { iConfigLogger, iConfigValidator, Config } from './Config'
+export { iFileLoader, ts, js, json } from './fileLoaders'
+export { iTransformer } from './transformers'
+export { arg, env, get, firstOf, conventional, withTransformers } from './readers'
