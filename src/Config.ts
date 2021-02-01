@@ -1,8 +1,8 @@
 import { performance } from 'perf_hooks'
 import { EventEmitter } from 'events'
-import { get as _get, has as _has } from 'lodash'
 import { Compiler } from './Compiler'
 import { ConfigLoader } from './ConfigLoader'
+import { get, has } from './utils'
 
 export type POJO = { [key: string]: unknown }
 
@@ -18,15 +18,19 @@ export interface iConfigValidator {
 export class Config extends EventEmitter {
     private scenario: POJO = {}
     private config: POJO = {}
-    constructor(
+    private constructor(
         private readonly logger: iConfigLogger = console,
-        private readonly loader: ConfigLoader = new ConfigLoader(logger),
-        private readonly compiler: Compiler = new Compiler(logger),
+        private readonly loader: ConfigLoader,
+        private readonly compiler: Compiler,
     ) {
         super()
     }
 
-    public async load(layers: (string | POJO)[] = [], configDirectory: string = '', amend = false): Promise<void> {
+    public static init(logger: iConfigLogger = console, loader?: ConfigLoader, compiler?: Compiler) {
+        return currentConfig || new Config(logger, loader || new ConfigLoader(logger), compiler || new Compiler(logger))
+    }
+
+    public async create(layers: (string | POJO)[] = [], configDirectory: string = '', amend = false): Promise<void> {
         const start = performance.now()
         this.scenario = await this.loader.load(layers, configDirectory, amend)
         const loaded = performance.now()
@@ -37,14 +41,17 @@ export class Config extends EventEmitter {
         this.logger.debug(`Configuration compiled in ${(performance.now() - loaded).toPrecision(6)} ms: `, this.config)
     }
 
-    public get(path: string = '') {
-        if (!this.has(path)) {
-            throw new Error(`Could not find path ${path} in the config`)
-        }
-        return path ? _get(this.config, path) : this.config
+    public async update(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
+        return this.create(layers, configDirectory, true)
+    }
+
+    public get(path?: string) {
+        get(this.config, path)
     }
 
     public has(path: string) {
-        return !path || _has(this.config, path)
+        return has(this.config, path)
     }
 }
+
+let currentConfig: Config

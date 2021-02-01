@@ -1,6 +1,6 @@
 import { toNumber as _toNumber } from 'lodash'
 export interface iTransformer {
-    (value: unknown): unknown[] | object | number | string | boolean | undefined
+    (value: unknown): unknown
 }
 
 export const json: iTransformer = (value) => {
@@ -27,7 +27,8 @@ export const bool: iTransformer = (value) => {
 }
 
 export const num: iTransformer = (value) => {
-    if (typeof value !== 'string') {
+    // Lodash toNumber() converts '' to 0 which is undesirable, hence the second check
+    if (typeof value !== 'string' || value === '') {
         return undefined
     }
     const n = _toNumber(value)

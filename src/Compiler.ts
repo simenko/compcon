@@ -1,17 +1,12 @@
-import flatten, { unflatten } from 'flat'
-import crypto from 'crypto'
-import { iConfigGetter, iReader, conventional } from './readers'
-import { json, bool, num, iTransformer } from './transformers'
+import { conventional, iConfigGetter, iReader } from './readers'
+import { bool, iTransformer, json, num } from './transformers'
 import { iConfigLogger, iConfigValidator, POJO } from './Config'
-import { deepFreeze } from './utils'
-interface iCancelablePromise extends PromiseLike<unknown> {
-    cancel: () => void
-}
+import { ConfigurationError, ErrorCodes } from './errors'
+import { deepFreeze, flatten, randomString, scheduleTimeout, unflatten } from './utils'
 
-const FakeSubtreeRoot = crypto.randomFillSync(Buffer.alloc(16)).toString('hex')
+const FakeSubtreeRoot = randomString()
 
 export class Compiler {
-    private compilationTimeout = 2000
     private config: POJO = {}
     private missingPaths: { [key: string]: ((value?: unknown) => void)[] } = {}
     constructor(
@@ -19,10 +14,11 @@ export class Compiler {
         private readonly validator: iConfigValidator = (config) => config,
         private readonly defaultReaderCreator: (options: unknown) => iReader = conventional,
         private readonly defaultTransformers: iTransformer[] = [json, bool, num],
+        private readonly compilationTimeout = 3000,
     ) {}
 
     public async compile(scenario: POJO): Promise<POJO> {
-        this.config = flatten(scenario, { safe: true })
+        this.config = flatten(scenario)
 
         Object.entries(this.config).forEach(([path, valueOrReader]) => {
             let reader: iReader
@@ -37,20 +33,37 @@ export class Compiler {
             })
         })
 
-        const timeoutPromise = this.scheduleTimeout()
+        const timeoutPromise = scheduleTimeout(this.compilationTimeout)
 
         await Promise.race([
             Promise.all(Object.values(this.config)).then(() => timeoutPromise.cancel()),
-            timeoutPromise,
+            timeoutPromise.catch(() => {
+                const missingPaths = Object.keys(this.missingPaths).length
+                    ? Object.keys(this.missingPaths)
+                    : Object.entries(this.config)
+                          .filter(([_, value]) => value && typeof (value as Promise<unknown>).then === 'function')
+                          .map(([key]) => key)
+                throw new ConfigurationError(
+                    ErrorCodes.COMPILATION_ERROR,
+                    `Could not resolve config paths: ${missingPaths}`,
+                    { missingPaths },
+                )
+            }),
         ])
-        this.config = this.validator(unflatten(this.config, { overwrite: true }))
+        try {
+            this.config = this.validator(unflatten(this.config))
+        } catch (e) {
+            throw new ConfigurationError(ErrorCodes.COMPILATION_ERROR, 'Configuration is invalid', e)
+        }
         deepFreeze(this.config)
         return this.config
     }
 
     private insertValue(path: string, value: unknown) {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
-            Object.entries(flatten(value)).forEach(([subPath, value]) => this.insertValue(path + '.' + subPath, value))
+            Object.entries(flatten(value as POJO)).forEach(([subPath, value]) =>
+                this.insertValue(path + '.' + subPath, value),
+            )
         } else {
             this.config[path] = value
             if (this.missingPaths[path]) {
@@ -73,28 +86,7 @@ export class Compiler {
             matchingEntries
                 .map(([key, value]) => [key.replace(path, FakeSubtreeRoot), value])
                 .reduce((acc, [key, value]) => ({ ...acc, [key as string]: value }), {}),
-            { overwrite: true },
         )
         return result[FakeSubtreeRoot]
-    }
-
-    private scheduleTimeout() {
-        let cancel
-        const timeoutPromise: Partial<iCancelablePromise> = new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                const missingPaths = Object.keys(this.missingPaths).length
-                    ? Object.keys(this.missingPaths)
-                    : Object.entries(this.config)
-                          .filter(([_, value]) => value && typeof (value as PromiseLike<unknown>).then === 'function')
-                          .map(([key]) => key)
-                reject(new Error(`Could not resolve config paths: ${missingPaths}`))
-            }, this.compilationTimeout)
-            cancel = () => {
-                clearTimeout(timeout)
-                resolve(undefined)
-            }
-        })
-        timeoutPromise.cancel = cancel
-        return timeoutPromise as iCancelablePromise
     }
 }

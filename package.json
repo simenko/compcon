@@ -50,6 +50,7 @@
   "dependencies": {
     "flat": "^5.0.2",
     "lodash": "^4.17.20",
-    "minimist": "^1.2.5"
+    "minimist": "^1.2.5",
+    "node-vault-client": "^0.5.6"
   }
 }
