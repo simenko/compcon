@@ -1,4 +1,4 @@
-import { json, bool, num } from './transformers'
+import { json, bool, num, composeValueTransformers } from './valueTransformers'
 
 describe('Transformers', () => {
     describe('JSON transformer', () => {
@@ -38,7 +38,7 @@ describe('Transformers', () => {
             expect(bool('FaLsE')).toEqual(false)
         })
 
-        it('Should  return undefined for everything else', () => {
+        it('Should return undefined for everything else', () => {
             expect(bool(1)).toEqual(undefined)
             expect(bool(undefined)).toEqual(undefined)
             expect(bool(0)).toEqual(undefined)
@@ -77,12 +77,42 @@ describe('Transformers', () => {
             expect(num(null)).toEqual(undefined)
             expect(num({})).toEqual(undefined)
             expect(num(false)).toEqual(undefined)
+            expect(num(true)).toEqual(undefined)
             expect(num('')).toEqual(undefined)
             expect(num([])).toEqual(undefined)
         })
 
         it('Should return undefined if a value is already numeric', () => {
             expect(num(10)).toEqual(undefined)
+        })
+    })
+
+    describe('Transformers compositor', () => {
+        it('Should return identity transformer when called without params', () => {
+            const compositeTransformer = composeValueTransformers()
+            expect(compositeTransformer('null')).toEqual('null')
+            expect(compositeTransformer(null)).toEqual(null)
+            expect(compositeTransformer(1)).toEqual(1)
+            expect(compositeTransformer('1')).toEqual('1')
+            expect(compositeTransformer('true')).toEqual('true')
+        })
+
+        it('Should try transformers from left to right, until one of them returns a value other than undefined', () => {
+            const firstTransformer = jest.fn(() => 'b')
+            const secondTransformer = jest.fn()
+            const compositeTransformer = composeValueTransformers(firstTransformer, secondTransformer)
+            expect(compositeTransformer('a')).toEqual('b')
+            expect(firstTransformer).toHaveBeenCalledWith('a')
+            expect(secondTransformer).not.toHaveBeenCalled()
+        })
+
+        it('The resulting transformer should return the value as is if all transformers have returned undefined', () => {
+            const firstTransformer = jest.fn()
+            const secondTransformer = jest.fn()
+            const compositeTransformer = composeValueTransformers(firstTransformer, secondTransformer)
+            expect(compositeTransformer('a')).toEqual('a')
+            expect(firstTransformer).toHaveBeenCalledWith('a')
+            expect(secondTransformer).toHaveBeenCalledWith('a')
         })
     })
 })

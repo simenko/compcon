@@ -44,3 +44,13 @@ export const get = (obj: POJO, path: string = '') => {
 }
 
 export const merge = (target: POJO, ...objs: POJO[]): POJO => _merge(target, ...objs)
+
+export const parseArgs = (argv: string[]): POJO =>
+    argv
+        .filter((arg) => arg.startsWith('--'))
+        .map((arg) => {
+            const [key, value] = arg.split('=')
+
+            return { [key.replace('--', '')]: value === undefined ? true : value }
+        })
+        .reduce((args, pair) => ({ ...args, ...pair }), {})

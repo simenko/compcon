@@ -1,8 +1,12 @@
-import { conventional, iConfigGetter, iReader } from './readers'
-import { bool, iTransformer, json, num } from './transformers'
+import { conventional, iReader, iDefaultReaderCreator } from './readers'
+import { bool, iValueTransformer, json, num } from './valueTransformers'
 import { iConfigLogger, iConfigValidator, POJO } from './Config'
 import { ConfigurationError, ErrorCodes } from './errors'
 import { deepFreeze, flatten, randomString, scheduleTimeout, unflatten } from './utils'
+
+export interface iConfigGetter {
+    (path: string): Promise<unknown>
+}
 
 const FakeSubtreeRoot = randomString()
 
@@ -12,8 +16,8 @@ export class Compiler {
     constructor(
         private readonly logger: iConfigLogger,
         private readonly validator: iConfigValidator = (config) => config,
-        private readonly defaultReaderCreator: (options: unknown) => iReader = conventional,
-        private readonly defaultTransformers: iTransformer[] = [json, bool, num],
+        private readonly defaultReaderCreator: iDefaultReaderCreator = conventional,
+        private readonly defaultTransformers: iValueTransformer<unknown>[] = [json, bool, num],
         private readonly compilationTimeout = 3000,
     ) {}
 
@@ -27,7 +31,7 @@ export class Compiler {
             } else {
                 reader = this.defaultReaderCreator(valueOrReader)
             }
-            this.config[path] = reader(path, this.logger, this.get, this.defaultTransformers).then((value: unknown) => {
+            this.config[path] = reader(path, this.logger, this.get, this.defaultTransformers).then((value) => {
                 this.insertValue(path, value)
                 return value
             })

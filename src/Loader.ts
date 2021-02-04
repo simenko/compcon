@@ -6,7 +6,7 @@ import { iFileLoader, js, json, ts } from './fileLoaders'
 import { iConfigLogger, POJO } from './Config'
 import { ConfigurationError, ErrorCodes } from './errors'
 
-export class ConfigLoader {
+export class Loader {
     private scenario: POJO = {}
     private configDirectory: string = ''
     private configDirFileList: string[] = []
