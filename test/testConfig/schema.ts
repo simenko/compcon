@@ -1,6 +1,6 @@
 import { IsString, ValidateNested, validateSync } from 'class-validator'
 import { plainToClass, Type } from 'class-transformer'
-import { validate, transform, POJO, ConfigurationError, ErrorCodes } from '../../src'
+import { validator, classTransformer, POJO, ConfigurationError, ErrorCodes } from '../../src'
 
 class DbConfiguration {
     @IsString()
@@ -33,7 +33,7 @@ class AppConfig {
 
 export type ReadonlyAppConfig = Readonly<AppConfig>
 
-export const validator: validate<AppConfig> = (config: AppConfig) => {
+export const validate: validator<AppConfig> = (config: AppConfig) => {
     const validationErrors = validateSync(config, { validationError: { target: false }, forbidUnknownValues: true })
     if (validationErrors.length) {
         throw new ConfigurationError(
@@ -44,4 +44,4 @@ export const validator: validate<AppConfig> = (config: AppConfig) => {
     }
 }
 
-export const transformer: transform<AppConfig> = (rawConfig: POJO) => plainToClass(AppConfig, rawConfig)
+export const transform: classTransformer<AppConfig> = (rawConfig: POJO) => plainToClass(AppConfig, rawConfig)

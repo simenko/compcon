@@ -1,6 +1,6 @@
 import setup from './Config'
 export default setup
-export { iConfigLogger, validate, transform, POJO } from './Config'
+export { iConfigLogger, validator, classTransformer, POJO } from './Config'
 export { iFileLoader, ts, js, json } from './fileLoaders'
 export { iValueTransformer } from './valueTransformers'
 export { iPathTransformer } from './pathTransformers'
