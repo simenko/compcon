@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import rawFlatten, { unflatten as rawUnflatten } from 'flat'
-import { get as _get, has as _has, merge as _merge } from 'lodash'
+import { get as _get, has as _has, merge as _merge, cloneDeep } from 'lodash'
 import { POJO } from './Config'
 import { ConfigurationError, ErrorCodes } from './errors'
 
@@ -42,8 +42,8 @@ export const get = (obj: POJO, path: string = '') => {
     }
     return !path ? obj : _get(obj, path)
 }
-
-export const merge = (target: POJO, ...objs: POJO[]): POJO => _merge(target, ...objs)
+export const merge = (...objs: POJO[]): POJO => _merge({}, ...objs)
+export const clone = (obj: POJO) => cloneDeep(obj)
 
 export const parseArgs = (argv: string[]): POJO =>
     argv

@@ -1,43 +1,122 @@
 import { performance } from 'perf_hooks'
 import { EventEmitter } from 'events'
-import { Compiler } from './Compiler'
-import { Loader } from './Loader'
-import { get, has } from './utils'
+import Compiler, { iCompile } from './Compiler'
+import Loader, { iLoad } from './Loader'
+import { clone, deepFreeze, get, has } from './utils'
+import { ConfigurationError, ErrorCodes } from './errors'
 
-export type POJO = { [key: string]: unknown }
+export type POJO = Record<string, unknown>
+export type transform<T> = (rawConfig: POJO) => T
+export type validate<T = POJO> = (config: T) => void
 
 export interface iConfigLogger {
     info(message?: unknown, ...optionalParams: unknown[]): void
     debug(message?: unknown, ...optionalParams: unknown[]): void
 }
 
-export interface iConfigValidator {
-    (config: POJO): POJO
+export interface iConfigOptions<T> {
+    logger?: iConfigLogger
+    load?: iLoad
+    compile?: iCompile
+    validate?: validate<T>
 }
 
-export class Config extends EventEmitter {
-    private scenario: POJO = {}
-    private config: POJO = {}
-    private constructor(
+let currentConfig: unknown
+
+/* eslint-disable no-redeclare */
+function setup<T>(transform: transform<T>, options?: iConfigOptions<T>): TypedConfig<T>
+function setup(options?: iConfigOptions<POJO>): Config
+function setup<T>(
+    transformerOrOptions?: transform<T> | iConfigOptions<T>,
+    options: iConfigOptions<T> = {},
+): TypedConfig<T> | Config {
+    /* eslint-enable no-redeclare */
+
+    let transformer
+    if (typeof transformerOrOptions === 'function') {
+        transformer = transformerOrOptions as transform<T>
+    } else {
+        options = (transformerOrOptions || options) as iConfigOptions<T>
+    }
+    if (currentConfig) {
+        if (
+            (currentConfig instanceof Config && transformer) ||
+            (currentConfig instanceof TypedConfig && !transformer)
+        ) {
+            throw new ConfigurationError(
+                ErrorCodes.INITIALIZATION_ERROR,
+                'You cannot switch between typed and untyped config after initialization',
+            )
+        }
+        if (currentConfig instanceof Config) return currentConfig as Config
+        if (currentConfig instanceof TypedConfig) return currentConfig as TypedConfig<T>
+    }
+    const { logger = console, load = Loader(logger), compile = Compiler(logger), validate } = options
+
+    return transformer
+        ? new TypedConfig<T>(transformer, logger, load, compile, validate)
+        : new Config(logger, load, compile, validate as validate<POJO>)
+}
+
+export default setup
+
+abstract class BaseConfig<T> extends EventEmitter {
+    protected scenario: POJO = {}
+    protected config!: T
+
+    constructor(
         private readonly logger: iConfigLogger = console,
-        private readonly loader: Loader,
-        private readonly compiler: Compiler,
+        private readonly load: iLoad,
+        private readonly compile: iCompile,
+        protected readonly validate?: validate<T>,
     ) {
         super()
     }
 
-    public static init(logger: iConfigLogger = console, loader?: Loader, compiler?: Compiler) {
-        return currentConfig || new Config(logger, loader || new Loader(logger), compiler || new Compiler(logger))
+    public async build(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
+        return this.buildInternal(layers, configDirectory)
     }
 
-    public async create(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
-        return this.load(layers, configDirectory, false)
+    public async rebuild(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
+        return this.buildInternal([clone(this.scenario) || {}, ...layers], configDirectory)
     }
 
-    public async update(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
-        return this.load(layers, configDirectory, true)
+    private async buildInternal(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
+        const start = performance.now()
+        const scenario = await this.load(layers, configDirectory)
+        const loaded = performance.now()
+        this.logger.debug(`Config scenario loaded in: ${loaded - start} ms: `, scenario)
+
+        const rawConfig = await this.compile(scenario)
+        const transformedConfig = this.transform(rawConfig)
+        this.validate && this.validate(transformedConfig)
+        deepFreeze(transformedConfig as POJO)
+        this.scenario = scenario
+        this.config = transformedConfig
+        this.emit('built')
+        this.logger.debug(`Configuration compiled in ${(performance.now() - loaded).toPrecision(6)} ms: `, this.config)
     }
 
+    protected abstract transform: transform<T>
+}
+
+class TypedConfig<T> extends BaseConfig<T> {
+    constructor(
+        protected transform: transform<T>,
+        logger: iConfigLogger,
+        load: iLoad,
+        compile: iCompile,
+        validate?: validate<T>,
+    ) {
+        super(logger, load, compile, validate)
+    }
+
+    public get(): T {
+        return this.config
+    }
+}
+
+class Config extends BaseConfig<POJO> {
     public get(path?: string): unknown {
         return get(this.config, path)
     }
@@ -46,16 +125,5 @@ export class Config extends EventEmitter {
         return has(this.config, path)
     }
 
-    private async load(layers: (string | POJO)[] = [], configDirectory: string = '', amend: boolean): Promise<void> {
-        const start = performance.now()
-        this.scenario = await this.loader.load(layers, configDirectory, amend)
-        const loaded = performance.now()
-        this.logger.debug(`Config scenario loaded in: ${loaded - start} ms: `, this.scenario)
-
-        this.config = await this.compiler.compile(this.scenario)
-        this.emit('load')
-        this.logger.debug(`Configuration compiled in ${(performance.now() - loaded).toPrecision(6)} ms: `, this.config)
-    }
+    protected transform: transform<POJO> = (rawConfig) => rawConfig
 }
-
-let currentConfig: Config

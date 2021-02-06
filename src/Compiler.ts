@@ -1,96 +1,98 @@
 import { conventional, iReader, iDefaultReaderCreator } from './readers'
 import { bool, iValueTransformer, json, num } from './valueTransformers'
-import { iConfigLogger, iConfigValidator, POJO } from './Config'
+import { iConfigLogger, POJO } from './Config'
 import { ConfigurationError, ErrorCodes } from './errors'
-import { deepFreeze, flatten, randomString, scheduleTimeout, unflatten } from './utils'
+import { flatten, randomString, scheduleTimeout, unflatten } from './utils'
+
+const FakeSubtreeRoot = randomString()
+
+interface iMissingPathsTracker {
+    [key: string]: ((value?: unknown) => void)[]
+}
 
 export interface iConfigGetter {
     (path: string): Promise<unknown>
 }
 
-const FakeSubtreeRoot = randomString()
+export interface iCompile {
+    (scenario: POJO): Promise<POJO>
+}
 
-export class Compiler {
-    private config: POJO = {}
-    private missingPaths: { [key: string]: ((value?: unknown) => void)[] } = {}
-    constructor(
-        private readonly logger: iConfigLogger,
-        private readonly validator: iConfigValidator = (config) => config,
-        private readonly defaultReaderCreator: iDefaultReaderCreator = conventional,
-        private readonly defaultTransformers: iValueTransformer<unknown>[] = [json, bool, num],
-        private readonly compilationTimeout = 3000,
-    ) {}
+export default function Compiler(
+    logger: iConfigLogger,
+    defaultReaderCreator: iDefaultReaderCreator = conventional,
+    defaultTransformers: iValueTransformer<unknown>[] = [json, bool, num],
+    compilationTimeout = 3000,
+) {
+    return async function compile(scenario: POJO): Promise<POJO> {
+        const config = flatten(scenario)
+        const missingPaths: iMissingPathsTracker = {}
 
-    public async compile(scenario: POJO): Promise<POJO> {
-        this.config = flatten(scenario)
-
-        Object.entries(this.config).forEach(([path, valueOrReader]) => {
+        Object.entries(config).forEach(([path, valueOrReader]) => {
             let reader: iReader
             if (typeof valueOrReader === 'function') {
                 reader = valueOrReader as iReader
             } else {
-                reader = this.defaultReaderCreator(valueOrReader)
+                reader = defaultReaderCreator(valueOrReader)
             }
-            this.config[path] = reader(path, this.logger, this.get, this.defaultTransformers).then((value) => {
-                this.insertValue(path, value)
-                return value
-            })
+            config[path] = reader(path, logger, createGetter(config, missingPaths), defaultTransformers).then(
+                (value) => {
+                    insertValue(path, value, config, missingPaths)
+                    return value
+                },
+            )
         })
 
-        const timeoutPromise = scheduleTimeout(this.compilationTimeout)
+        const timeoutPromise = scheduleTimeout(compilationTimeout)
 
         await Promise.race([
-            Promise.all(Object.values(this.config)).then(() => timeoutPromise.cancel()),
+            Promise.all(Object.values(config)).then(() => timeoutPromise.cancel()),
             timeoutPromise.catch(() => {
-                const missingPaths = Object.keys(this.missingPaths).length
-                    ? Object.keys(this.missingPaths)
-                    : Object.entries(this.config)
+                const missing = Object.keys(missingPaths).length
+                    ? Object.keys(missingPaths)
+                    : Object.entries(config)
                           .filter(([_, value]) => value && typeof (value as Promise<unknown>).then === 'function')
                           .map(([key]) => key)
                 throw new ConfigurationError(
                     ErrorCodes.COMPILATION_ERROR,
-                    `Could not resolve config paths: ${missingPaths}`,
-                    { missingPaths },
+                    `Could not resolve config paths: ${missing}`,
+                    { missing },
                 )
             }),
         ])
-        try {
-            this.config = this.validator(unflatten(this.config))
-        } catch (e) {
-            throw new ConfigurationError(ErrorCodes.COMPILATION_ERROR, 'Configuration is invalid', e)
-        }
-        deepFreeze(this.config)
-        return this.config
+        return unflatten(config)
     }
 
-    private insertValue(path: string, value: unknown) {
+    function insertValue(path: string, value: unknown, config: POJO, missingPaths: iMissingPathsTracker) {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
             Object.entries(flatten(value as POJO)).forEach(([subPath, value]) =>
-                this.insertValue(path + '.' + subPath, value),
+                insertValue(path + '.' + subPath, value, config, missingPaths),
             )
         } else {
-            this.config[path] = value
-            if (this.missingPaths[path]) {
-                this.missingPaths[path].forEach((resolver) => resolver())
-                delete this.missingPaths[path]
+            config[path] = value
+            if (missingPaths[path]) {
+                missingPaths[path].forEach((resolver) => resolver())
+                delete missingPaths[path]
             }
         }
     }
 
-    private get: iConfigGetter = async (path = '') => {
-        let matchingEntries = Object.entries(this.config).filter(([key]) => key.startsWith(path))
-        if (!matchingEntries.length) {
-            const pathWatcher = new Promise((resolve) => {
-                this.missingPaths[path] = [...(this.missingPaths[path] || []), resolve]
-            })
-            await pathWatcher
-            matchingEntries = Object.entries(this.config).filter(([key]) => key.startsWith(path))
+    function createGetter(config: POJO, missingPaths: iMissingPathsTracker): iConfigGetter {
+        return async (path = '') => {
+            let matchingEntries = Object.entries(config).filter(([key]) => key.startsWith(path))
+            if (!matchingEntries.length) {
+                const pathWatcher = new Promise((resolve) => {
+                    missingPaths[path] = [...(missingPaths[path] || []), resolve]
+                })
+                await pathWatcher
+                matchingEntries = Object.entries(config).filter(([key]) => key.startsWith(path))
+            }
+            const result: POJO = unflatten(
+                matchingEntries
+                    .map(([key, value]) => [key.replace(path, FakeSubtreeRoot), value])
+                    .reduce((acc, [key, value]) => ({ ...acc, [key as string]: value }), {}),
+            )
+            return result[FakeSubtreeRoot]
         }
-        const result: POJO = unflatten(
-            matchingEntries
-                .map(([key, value]) => [key.replace(path, FakeSubtreeRoot), value])
-                .reduce((acc, [key, value]) => ({ ...acc, [key as string]: value }), {}),
-        )
-        return result[FakeSubtreeRoot]
     }
 }

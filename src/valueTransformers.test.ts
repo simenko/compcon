@@ -70,7 +70,7 @@ describe('Transformers', () => {
             expect(num('1e3')).toEqual(1000)
         })
 
-        it('Should return undefined for non-numbers or infinity', () => {
+        it('Should return undefined for non-numbers or infsetupy', () => {
             expect(num(1 / 0)).toEqual(undefined)
             expect(num('0z10')).toEqual(undefined)
             expect(num(Infinity)).toEqual(undefined)
