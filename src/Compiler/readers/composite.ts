@@ -1,5 +1,5 @@
 import { iValueTransformer } from '../valueTransformers'
-import { ConfigurationError, ErrorCodes } from '../errors'
+import { ConfigurationError, ErrorCodes } from '../../errors'
 import { iDefaultReaderCreator, withTransformers } from './common'
 import { arg, env } from './basic'
 

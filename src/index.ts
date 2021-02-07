@@ -1,9 +1,8 @@
-import init from './Config'
-export default init
-export { iConfigLogger, validator, classTransformer, POJO } from './Config'
-export { iFileLoader, ts, js, json } from './fileLoaders'
-export { iValueTransformer } from './valueTransformers'
-export { iPathTransformer } from './pathTransformers'
+export { init as default } from './init'
+export { iConfigLogger, validator, classTransformer, POJO } from './BaseConfig'
+export { iFileLoader, ts, js, json } from './Loader/fileLoaders'
+export { iValueTransformer } from './Compiler/valueTransformers'
+export { iPathTransformer } from './Compiler/pathTransformers'
 export {
     env,
     get,
@@ -13,5 +12,5 @@ export {
     iDefaultReaderCreator,
     iReaderCreator,
     iReader,
-} from './readers'
+} from './Compiler/readers'
 export { ConfigurationError, ErrorCodes } from './errors'

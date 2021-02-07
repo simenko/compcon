@@ -1,17 +1,17 @@
 import path from 'path'
 import { readdir } from 'fs'
 import { promisify } from 'util'
-import { merge } from './utils'
-import { iFileLoader, js, json, ts } from './fileLoaders'
-import { iConfigLogger, POJO } from './Config'
-import { ConfigurationError, ErrorCodes } from './errors'
+import { merge } from '../utils'
+import { iFileLoader } from './fileLoaders'
+import { iConfigLogger, POJO } from '../Config'
+import { ConfigurationError, ErrorCodes } from '../errors'
 
 export interface iLoad {
-    (layers: (string | POJO)[], configDirectory?: string): Promise<POJO>
+    (layers: (string | POJO)[], configDirectory: string): Promise<POJO>
 }
 
-export default function Loader(logger: iConfigLogger = console, fileLoaders: iFileLoader[] = [json, js, ts]) {
-    return async function load(layers: (string | POJO)[], configDirectory: string = ''): Promise<POJO> {
+export default function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]) {
+    return async function load(layers: (string | POJO)[], configDirectory: string): Promise<POJO> {
         let configDirFileList: string[]
         try {
             if (configDirectory) {

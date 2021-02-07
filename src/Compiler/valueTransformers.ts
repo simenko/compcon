@@ -1,5 +1,5 @@
 import { toNumber as _toNumber } from 'lodash'
-import { POJO } from './Config'
+import { POJO } from '../Config'
 
 export interface iValueTransformer<T> {
     (value: unknown): T | undefined

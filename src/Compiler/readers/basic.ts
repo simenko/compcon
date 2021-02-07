@@ -1,6 +1,6 @@
 import { iValueTransformer } from '../valueTransformers'
 import { withTransformers, iReaderCreator, iDefaultReaderCreator } from './common'
-import { parseArgs } from '../utils'
+import { parseArgs } from '../../utils'
 import { argPathTransformer, envPathTransformer, iPathTransformer } from '../pathTransformers'
 
 export const literal: iDefaultReaderCreator = (value: unknown) => {

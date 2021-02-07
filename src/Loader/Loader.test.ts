@@ -1,7 +1,7 @@
 import { readdir } from 'fs'
 import Loader from './Loader'
-import { ConfigurationError, ErrorCodes } from './errors'
-import * as utils from './utils'
+import { ConfigurationError, ErrorCodes } from '../errors'
+import * as utils from '../utils'
 
 jest.mock('fs')
 // https://github.com/microsoft/TypeScript/issues/26591

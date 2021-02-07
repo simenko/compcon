@@ -1,8 +1,8 @@
-import { conventional, iReader, iDefaultReaderCreator } from './readers'
-import { bool, iValueTransformer, json, num } from './valueTransformers'
-import { iConfigLogger, POJO } from './Config'
-import { ConfigurationError, ErrorCodes } from './errors'
-import { flatten, randomString, scheduleTimeout, unflatten } from './utils'
+import { iReader, iDefaultReaderCreator } from './readers'
+import { iValueTransformer } from './valueTransformers'
+import { iConfigLogger, POJO } from '../Config'
+import { ConfigurationError, ErrorCodes } from '../errors'
+import { flatten, randomString, scheduleTimeout, unflatten } from '../utils'
 
 const FakeSubtreeRoot = randomString()
 
@@ -20,8 +20,8 @@ export interface iCompile {
 
 export default function Compiler(
     logger: iConfigLogger,
-    defaultReaderCreator: iDefaultReaderCreator = conventional,
-    defaultTransformers: iValueTransformer<unknown>[] = [json, bool, num],
+    defaultReaderCreator: iDefaultReaderCreator,
+    defaultTransformers: iValueTransformer<unknown>[],
     compilationTimeout = 3000,
 ) {
     return async function compile(scenario: POJO): Promise<POJO> {

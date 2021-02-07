@@ -1,7 +1,7 @@
 import { conventional, firstOf } from './composite'
 import { iReader } from './common'
 import { iConfigGetter } from '../Compiler'
-import { ConfigurationError, ErrorCodes } from '../errors'
+import { ConfigurationError, ErrorCodes } from '../../errors'
 
 const mockGet: iConfigGetter = jest.fn(async (path: string) => path)
 

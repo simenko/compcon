@@ -1,4 +1,4 @@
-import { POJO } from './Config'
+import { POJO } from '../Config'
 
 export interface iFileLoader {
     (filename: string): Promise<POJO>

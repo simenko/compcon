@@ -1,5 +1,5 @@
 import Compiler, { iCompile } from './Compiler'
-import { iConfigLogger } from './Config'
+import { iConfigLogger } from '../Config'
 import { json, bool, num } from './valueTransformers'
 import { conventional } from './readers'
 
@@ -24,7 +24,7 @@ const mockPrimitiveScenario = {
 describe('Default behavior', () => {
     let compile: iCompile
     beforeEach(() => {
-        compile = Compiler(mockLogger)
+        compile = Compiler(mockLogger, conventional, [json, bool, num])
     })
 
     it('Should call the reader and pass the logger and default transformers to it', async () => {
