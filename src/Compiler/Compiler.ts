@@ -1,6 +1,6 @@
 import { iReader, iDefaultReaderCreator } from './readers'
 import { iValueTransformer } from './valueTransformers'
-import { iConfigLogger, POJO } from '../Config'
+import { iConfigLogger, POJO } from '../BaseConfig'
 import { ConfigurationError, ErrorCodes } from '../errors'
 import { flatten, randomString, scheduleTimeout, unflatten } from '../utils'
 
@@ -22,7 +22,7 @@ export default function Compiler(
     logger: iConfigLogger,
     defaultReaderCreator: iDefaultReaderCreator,
     defaultTransformers: iValueTransformer<unknown>[],
-    compilationTimeout = 3000,
+    compilationTimeout = 5000,
 ) {
     return async function compile(scenario: POJO): Promise<POJO> {
         const config = flatten(scenario)

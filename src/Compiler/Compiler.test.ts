@@ -1,5 +1,5 @@
 import Compiler, { iCompile } from './Compiler'
-import { iConfigLogger } from '../Config'
+import { iConfigLogger } from '../BaseConfig'
 import { json, bool, num } from './valueTransformers'
 import { conventional } from './readers'
 

@@ -1,4 +1,4 @@
-import { POJO } from './Config'
+import { POJO } from './BaseConfig'
 
 export enum ErrorCodes {
     ACCESS_ERROR = 'ACCESS_ERROR',

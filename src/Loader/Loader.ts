@@ -3,7 +3,7 @@ import { readdir } from 'fs'
 import { promisify } from 'util'
 import { merge } from '../utils'
 import { iFileLoader } from './fileLoaders'
-import { iConfigLogger, POJO } from '../Config'
+import { iConfigLogger, POJO } from '../BaseConfig'
 import { ConfigurationError, ErrorCodes } from '../errors'
 
 export interface iLoad {

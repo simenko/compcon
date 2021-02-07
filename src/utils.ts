@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import rawFlatten, { unflatten as rawUnflatten } from 'flat'
 import { get as _get, has as _has, merge as _merge, cloneDeep } from 'lodash'
-import { POJO } from './Config'
+import { POJO } from './BaseConfig'
 import { ConfigurationError, ErrorCodes } from './errors'
 
 export function deepFreeze(obj: object): void {
