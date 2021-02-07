@@ -1,4 +1,4 @@
-import { iReader, iDefaultReaderCreator } from './readers'
+import { iDefaultReaderCreator, iReader } from './readers'
 import { iValueTransformer } from './valueTransformers'
 import { iConfigLogger, POJO } from '../BaseConfig'
 import { ConfigurationError, ErrorCodes } from '../errors'
@@ -35,12 +35,20 @@ export default function Compiler(
             } else {
                 reader = defaultReaderCreator(valueOrReader)
             }
-            config[path] = reader(path, logger, createGetter(config, missingPaths), defaultTransformers).then(
-                (value) => {
-                    insertValue(path, value, config, missingPaths)
-                    return value
-                },
-            )
+            try {
+                config[path] = reader(path, logger, createGetter(config, missingPaths), defaultTransformers).then(
+                    (value) => {
+                        insertValue(path, value, config, missingPaths)
+                        return value
+                    },
+                )
+            } catch (e) {
+                throw new ConfigurationError(ErrorCodes.COMPILATION_ERROR, 'Failed to read configuration value', {
+                    path,
+                    reader: reader.name,
+                    reason: e,
+                })
+            }
         })
 
         const timeoutPromise = scheduleTimeout(compilationTimeout)
@@ -48,15 +56,17 @@ export default function Compiler(
         await Promise.race([
             Promise.all(Object.values(config)).then(() => timeoutPromise.cancel()),
             timeoutPromise.catch(() => {
-                const missing = Object.keys(missingPaths).length
-                    ? Object.keys(missingPaths)
-                    : Object.entries(config)
-                          .filter(([_, value]) => value && typeof (value as Promise<unknown>).then === 'function')
-                          .map(([key]) => key)
+                const missing = Object.keys(missingPaths)
+                const unresolved = Object.entries(config)
+                    .filter(([_, value]) => value && typeof (value as Promise<unknown>).then === 'function')
+                    .map(([key]) => key)
+                const details: Partial<Record<'missingPaths' | 'unresolvedPaths', string[]>> = {}
+                missing.length && (details.missingPaths = missing)
+                unresolved.length && (details.unresolvedPaths = unresolved)
                 throw new ConfigurationError(
                     ErrorCodes.COMPILATION_ERROR,
-                    `Could not resolve config paths: ${missing}`,
-                    { missing },
+                    `Could not resolve some config paths`,
+                    details,
                 )
             }),
         ])

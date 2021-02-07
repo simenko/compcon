@@ -1,5 +1,7 @@
 import { POJO } from './BaseConfig'
 
+type errors = Error | Error[]
+
 export enum ErrorCodes {
     ACCESS_ERROR = 'ACCESS_ERROR',
     LOADING_ERROR = 'LOADING_ERROR',
@@ -10,24 +12,40 @@ export enum ErrorCodes {
 }
 
 export class ConfigurationError extends Error {
-    public readonly details: POJO | undefined
-    public readonly reason: Error | Error[] | undefined
-    constructor(public readonly code: ErrorCodes, message: string = '', detailsOrReason: POJO | Error | Error[] = {}) {
+    public readonly details?: POJO
+    public readonly reason?: errors
+    constructor(public readonly code: ErrorCodes, message: string = '', detailsOrReason?: POJO | errors) {
         super(message)
         Error.captureStackTrace(this, ConfigurationError)
         this.name = this.constructor.name
         const mainMessage = `${code} ${message}`
         let reasonMessage = ''
-        if (detailsOrReason instanceof Error || Array.isArray(detailsOrReason)) {
-            if (Array.isArray(detailsOrReason)) {
-                reasonMessage = `[${detailsOrReason.map((e) => e.message).join(', ')}]`
-            } else {
-                reasonMessage = detailsOrReason.message
-            }
+        if (isErrors(detailsOrReason)) {
+            reasonMessage = composeReasonMessage(detailsOrReason)
             this.reason = detailsOrReason
         } else {
             this.details = detailsOrReason
+            if (detailsOrReason?.reason && isErrors(detailsOrReason.reason)) {
+                reasonMessage = composeReasonMessage(detailsOrReason.reason)
+                this.reason = detailsOrReason.reason
+                delete detailsOrReason.reason
+            }
         }
         this.message = `${mainMessage}${reasonMessage}`
+    }
+}
+
+function isErrors(maybeErrors: unknown): maybeErrors is errors {
+    return (
+        maybeErrors instanceof Error ||
+        (Array.isArray(maybeErrors) && maybeErrors.every((item) => item instanceof Error))
+    )
+}
+
+function composeReasonMessage(reason: errors) {
+    if (Array.isArray(reason)) {
+        return `[${reason.map((e) => e.message).join(', ')}]`
+    } else {
+        return reason.message
     }
 }
