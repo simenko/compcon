@@ -30,23 +30,23 @@ export abstract class BaseConfig<T> extends EventEmitter {
 
     protected abstract transform: classTransformer<T>
 
-    public async create(layers: (string | POJO)[] = [], configDirectory?: string): Promise<void> {
+    public async create(layers: (string | POJO)[], configDirectory?: string): Promise<this> {
         return this.build(layers, configDirectory)
     }
 
-    public async update(layers: (string | POJO)[] = [], configDirectory?: string): Promise<void> {
+    public async update(layers: (string | POJO)[], configDirectory?: string): Promise<this> {
         return this.build([clone(this.scenario), ...layers], configDirectory)
     }
 
-    private async build(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
+    private async build(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<this> {
         const enqueued = performance.now()
         const dequeue = await this.enqueueBuild()
         const started = performance.now()
-        this.logger.debug(`Time spent in queue: ${(started - enqueued).toPrecision(6)} ms. `)
+        this.logger.debug(`Time spent in queue: ${(started - enqueued).toPrecision(6)} ms.`)
 
         const scenario = await this.load(layers, configDirectory)
         const loaded = performance.now()
-        this.logger.debug(`Config scenario loaded in: ${(loaded - started).toPrecision(6)} ms: `, scenario)
+        this.logger.debug(`Config scenario loaded in: ${(loaded - started).toPrecision(6)} ms: \n`, scenario)
 
         const rawConfig = await this.compile(scenario)
         const transformedConfig = this.transform(rawConfig)
@@ -54,15 +54,17 @@ export abstract class BaseConfig<T> extends EventEmitter {
         deepFreeze(transformedConfig as POJO)
         this.scenario = scenario
         this.config = transformedConfig
+
         this.emit('configurationChanged')
         const finished = performance.now()
+        dequeue()
         this.logger.debug(
             `Configuration compiled in ${(finished - loaded).toPrecision(6)} ms. Total build time is ${(
                 finished - enqueued
             ).toPrecision(6)} ms.\n`,
             this.config,
         )
-        dequeue()
+        return this
     }
 
     private async enqueueBuild() {

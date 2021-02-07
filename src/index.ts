@@ -1,7 +1,7 @@
 export { init as default } from './init'
 export { iConfigLogger, validator, classTransformer, POJO } from './BaseConfig'
-export { iFileLoader, ts, js, json } from './Loader/fileLoaders'
-export { iValueTransformer } from './Compiler/valueTransformers'
+export { iFileLoader } from './Loader/fileLoaders'
+export { iValueTransformer, json, bool, num } from './Compiler/valueTransformers'
 export { iPathTransformer } from './Compiler/pathTransformers'
 export {
     env,
