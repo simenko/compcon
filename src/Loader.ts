@@ -36,7 +36,11 @@ export default function Loader(logger: iConfigLogger = console, fileLoaders: iFi
                 (filename) => filename.replace(path.extname(filename), '') === basenameOrSubtree,
             )
             if (!layerFilenames.length) {
-                logger.debug(`Could not find layer ${basenameOrSubtree}, skipping.`)
+                logger.debug(
+                    new ConfigurationError(ErrorCodes.LOADING_ERROR, `Could not find a layer, skipping.`, {
+                        layerName: basenameOrSubtree,
+                    }),
+                )
                 return {}
             }
             const layerTypes = layerFilenames.map((filename) => path.extname(filename).replace('.', ''))

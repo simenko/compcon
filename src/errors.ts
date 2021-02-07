@@ -17,7 +17,7 @@ export class ConfigurationError extends Error {
         Error.captureStackTrace(this, ConfigurationError)
         this.name = this.constructor.name
         const mainMessage = `${code} ${message}`
-        let reasonMessage
+        let reasonMessage = ''
         if (detailsOrReason instanceof Error || Array.isArray(detailsOrReason)) {
             if (Array.isArray(detailsOrReason)) {
                 reasonMessage = `[${detailsOrReason.map((e) => e.message).join(', ')}]`

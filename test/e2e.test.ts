@@ -1,9 +1,8 @@
 import path from 'path'
-import 'reflect-metadata'
 import Config from '../src'
-import { ReadonlyAppConfig, transform } from './testConfig/schema'
+import { ReadonlyAppConfig, validate, transform } from './testConfig/schema'
 
-const config = Config<ReadonlyAppConfig>(transform)
+const config = Config<ReadonlyAppConfig>(transform, { validate })
 // const config = Config()
 
 describe('Config layers loading', () => {

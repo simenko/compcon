@@ -30,7 +30,11 @@ export function scheduleTimeout(time = 2000) {
     return timeoutPromise as iCancelableTimeout
 }
 
-export const randomString = (length = 32) => crypto.randomFillSync(Buffer.alloc(Math.ceil(length / 2))).toString('hex')
+export const randomString = (length = 32) =>
+    crypto
+        .randomFillSync(Buffer.alloc(Math.ceil(length / 2)))
+        .toString('hex')
+        .substr(0, length)
 
 export const flatten = (obj: POJO = {}): POJO => rawFlatten(obj, { safe: true })
 export const unflatten = (obj: POJO = {}): POJO => rawUnflatten(obj, { overwrite: true })

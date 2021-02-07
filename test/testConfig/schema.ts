@@ -1,3 +1,5 @@
+import 'reflect-metadata'
+
 import { IsString, ValidateNested, validateSync } from 'class-validator'
 import { plainToClass, Type } from 'class-transformer'
 import { validator, classTransformer, POJO, ConfigurationError, ErrorCodes } from '../../src'
@@ -34,7 +36,11 @@ class AppConfig {
 export type ReadonlyAppConfig = Readonly<AppConfig>
 
 export const validate: validator<AppConfig> = (config: AppConfig) => {
-    const validationErrors = validateSync(config, { validationError: { target: false }, forbidUnknownValues: true })
+    const validationErrors = validateSync(config, {
+        validationError: { target: false },
+        whitelist: true,
+        forbidNonWhitelisted: true,
+    })
     if (validationErrors.length) {
         throw new ConfigurationError(
             ErrorCodes.VALIDATION_ERROR,

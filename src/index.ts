@@ -1,5 +1,5 @@
-import setup from './Config'
-export default setup
+import init from './Config'
+export default init
 export { iConfigLogger, validator, classTransformer, POJO } from './Config'
 export { iFileLoader, ts, js, json } from './fileLoaders'
 export { iValueTransformer } from './valueTransformers'

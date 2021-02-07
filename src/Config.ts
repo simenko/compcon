@@ -21,16 +21,20 @@ export interface iConfigOptions<T> {
     validate?: validator<T>
 }
 
-let currentConfig: unknown
+let isInitialized = false
 
 /* eslint-disable no-redeclare */
-function setup<T>(transform: classTransformer<T>, options?: iConfigOptions<T>): TypedConfig<T>
-function setup(options?: iConfigOptions<POJO>): Config
-function setup<T>(
+function init<T>(transform: classTransformer<T>, options?: iConfigOptions<T>): TypedConfig<T>
+function init(options?: iConfigOptions<POJO>): Config
+function init<T>(
     transformerOrOptions?: classTransformer<T> | iConfigOptions<T>,
     options: iConfigOptions<T> = {},
 ): TypedConfig<T> | Config {
     /* eslint-enable no-redeclare */
+
+    if (isInitialized) {
+        throw new ConfigurationError(ErrorCodes.INITIALIZATION_ERROR, 'The configuration can only be initialized once')
+    }
 
     let transform
     if (typeof transformerOrOptions === 'function') {
@@ -38,28 +42,22 @@ function setup<T>(
     } else {
         options = (transformerOrOptions || options) as iConfigOptions<T>
     }
-    if (currentConfig) {
-        if ((currentConfig instanceof Config && transform) || (currentConfig instanceof TypedConfig && !transform)) {
-            throw new ConfigurationError(
-                ErrorCodes.INITIALIZATION_ERROR,
-                'You cannot switch between typed and untyped config after initialization',
-            )
-        }
-        if (currentConfig instanceof Config) return currentConfig as Config
-        if (currentConfig instanceof TypedConfig) return currentConfig as TypedConfig<T>
-    }
+
     const { logger = console, load = Loader(logger), compile = Compiler(logger), validate } = options
 
+    isInitialized = true
     return transform
         ? new TypedConfig<T>(transform, logger, load, compile, validate)
         : new Config(logger, load, compile, validate as validator<POJO>)
 }
 
-export default setup
+export default init
 
 abstract class BaseConfig<T> extends EventEmitter {
     protected scenario: POJO = {}
     protected config!: T
+    private buildId = 0
+    private buildQueue: Record<number, Promise<unknown>> = {}
 
     constructor(
         private readonly logger: iConfigLogger = console,
@@ -70,6 +68,8 @@ abstract class BaseConfig<T> extends EventEmitter {
         super()
     }
 
+    protected abstract transform: classTransformer<T>
+
     public async create(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
         return this.build(layers, configDirectory)
     }
@@ -79,10 +79,14 @@ abstract class BaseConfig<T> extends EventEmitter {
     }
 
     private async build(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<void> {
-        const start = performance.now()
+        const enqueued = performance.now()
+        const dequeue = await this.enqueueBuild()
+        const started = performance.now()
+        this.logger.debug(`Time spent in queue: ${(started - enqueued).toPrecision(6)} ms. `)
+
         const scenario = await this.load(layers, configDirectory)
         const loaded = performance.now()
-        this.logger.debug(`Config scenario loaded in: ${loaded - start} ms: `, scenario)
+        this.logger.debug(`Config scenario loaded in: ${(loaded - started).toPrecision(6)} ms: `, scenario)
 
         const rawConfig = await this.compile(scenario)
         const transformedConfig = this.transform(rawConfig)
@@ -91,10 +95,31 @@ abstract class BaseConfig<T> extends EventEmitter {
         this.scenario = scenario
         this.config = transformedConfig
         this.emit('configurationChanged')
-        this.logger.debug(`Configuration compiled in ${(performance.now() - loaded).toPrecision(6)} ms: `, this.config)
+        const finished = performance.now()
+        this.logger.debug(
+            `Configuration compiled in ${(finished - loaded).toPrecision(6)} ms. Total build time is ${(
+                finished - enqueued
+            ).toPrecision(6)} ms.\n`,
+            this.config,
+        )
+        dequeue()
     }
 
-    protected abstract transform: classTransformer<T>
+    private async enqueueBuild() {
+        const previousBuilds = Object.values(this.buildQueue)
+
+        this.buildId++
+        let resolver: (v?: unknown) => void
+        this.buildQueue[this.buildId] = new Promise((resolve) => {
+            resolver = resolve
+        })
+
+        await Promise.all(previousBuilds)
+        return () => {
+            delete this.buildQueue[this.buildId]
+            resolver()
+        }
+    }
 }
 
 class TypedConfig<T> extends BaseConfig<T> {
