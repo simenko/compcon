@@ -26,6 +26,7 @@ export class ProperError<ErrorCodes> extends Error {
     }
 }
 
+// Use this until https://github.com/tc39/proposal-throw-expressions is here
 export const thrw = (e: Error): never => {
     throw e
 }
