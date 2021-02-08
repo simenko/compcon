@@ -1,7 +1,7 @@
 import { iDefaultReaderCreator, iReader } from './readers'
 import { iValueTransformer } from './valueTransformers'
 import { iConfigLogger, POJO } from '../BaseConfig'
-import { ConfigurationError, ErrorCodes } from '../errors'
+import { ConfigurationError, ConfigurationErrorCodes } from '../errors'
 import { flatten, randomString, scheduleTimeout, unflatten } from '../utils'
 
 const FakeSubtreeRoot = randomString()
@@ -43,11 +43,15 @@ export default function Compiler(
                     },
                 )
             } catch (e) {
-                throw new ConfigurationError(ErrorCodes.COMPILATION_ERROR, 'Failed to read configuration value', {
-                    path,
-                    reader: reader.name,
-                    reason: e,
-                })
+                throw new ConfigurationError(
+                    ConfigurationErrorCodes.COMPILATION_ERROR,
+                    {
+                        path,
+                        reader: reader.name,
+                        reason: e,
+                    },
+                    `Failed to read configuration value at ${path}`,
+                )
             }
         })
 
@@ -63,10 +67,11 @@ export default function Compiler(
                 const details: Partial<Record<'missingPaths' | 'unresolvedPaths', string[]>> = {}
                 missing.length && (details.missingPaths = missing)
                 unresolved.length && (details.unresolvedPaths = unresolved)
+
                 throw new ConfigurationError(
-                    ErrorCodes.COMPILATION_ERROR,
-                    `Could not resolve some config paths`,
+                    ConfigurationErrorCodes.COMPILATION_ERROR,
                     details,
+                    `Could not resolve config paths: ${[...missing, ...unresolved].join(', ')}`,
                 )
             }),
         ])

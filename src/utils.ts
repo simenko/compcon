@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import rawFlatten, { unflatten as rawUnflatten } from 'flat'
 import { get as _get, has as _has, merge as _merge, cloneDeep } from 'lodash'
 import { POJO } from './BaseConfig'
-import { ConfigurationError, ErrorCodes } from './errors'
+import { ConfigurationError, ConfigurationErrorCodes } from './errors'
 
 export function deepFreeze(obj: object): void {
     Object.getOwnPropertyNames(obj).forEach((prop) => {
@@ -42,7 +42,7 @@ export const unflatten = (obj: POJO = {}): POJO => rawUnflatten(obj, { overwrite
 export const has = (obj: POJO, path: string) => !path || _has(obj, path)
 export const get = (obj: POJO, path: string = '') => {
     if (!has(obj, path)) {
-        throw new ConfigurationError(ErrorCodes.ACCESS_ERROR, `Could not find path ${path}`, { path })
+        throw new ConfigurationError(ConfigurationErrorCodes.ACCESS_ERROR, { path }, `Could not find path ${path}`)
     }
     return !path ? obj : _get(obj, path)
 }

@@ -2,7 +2,7 @@ import 'reflect-metadata'
 
 import { IsString, ValidateNested, validateSync } from 'class-validator'
 import { plainToClass, Type } from 'class-transformer'
-import { validator, classTransformer, POJO, ConfigurationError, ErrorCodes } from '../../src'
+import { validator, classTransformer, POJO, ConfigurationError, ConfigurationErrorCodes } from '../../src'
 
 class DbConfiguration {
     @IsString()
@@ -43,8 +43,7 @@ export const validate: validator<AppConfig> = (config: AppConfig) => {
     })
     if (validationErrors.length) {
         throw new ConfigurationError(
-            ErrorCodes.VALIDATION_ERROR,
-            undefined,
+            ConfigurationErrorCodes.VALIDATION_ERROR,
             validationErrors.map((e) => new Error(JSON.stringify(e, null, 2))),
         )
     }

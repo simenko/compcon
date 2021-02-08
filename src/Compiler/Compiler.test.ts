@@ -2,7 +2,7 @@ import Compiler, { iCompile } from './Compiler'
 import { iConfigLogger } from '../BaseConfig'
 import { json } from './valueTransformers'
 import { get, withTransformers } from './readers'
-import { ConfigurationError, ErrorCodes } from '../errors'
+import { ConfigurationError, ConfigurationErrorCodes } from '../errors'
 
 const mockLogger: iConfigLogger = {
     info: jest.fn(),
@@ -100,7 +100,7 @@ describe('Compiler', () => {
             await compile(badScenario)
         } catch (e) {
             expect(e).toBeInstanceOf(ConfigurationError)
-            expect(e).toHaveProperty('code', ErrorCodes.COMPILATION_ERROR)
+            expect(e).toHaveProperty('code', ConfigurationErrorCodes.COMPILATION_ERROR)
             expect(e).toHaveProperty('details', { path: 'a', reader: 'badReader' })
             expect(e).toHaveProperty('reason', expect.any(ReaderError))
         }
@@ -126,7 +126,7 @@ describe('Compiler', () => {
                 await compilation
             } catch (e) {
                 expect(e).toBeInstanceOf(ConfigurationError)
-                expect(e).toHaveProperty('code', ErrorCodes.COMPILATION_ERROR)
+                expect(e).toHaveProperty('code', ConfigurationErrorCodes.COMPILATION_ERROR)
                 expect(e).toHaveProperty('details', { unresolvedPaths: ['a'] })
             }
         })
@@ -141,7 +141,7 @@ describe('Compiler', () => {
                 await compilation
             } catch (e) {
                 expect(e).toBeInstanceOf(ConfigurationError)
-                expect(e).toHaveProperty('code', ErrorCodes.COMPILATION_ERROR)
+                expect(e).toHaveProperty('code', ConfigurationErrorCodes.COMPILATION_ERROR)
                 expect(e).toHaveProperty('details', { unresolvedPaths: ['a'], missingPaths: ['bad.path'] })
             }
         })

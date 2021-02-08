@@ -4,7 +4,7 @@ import { promisify } from 'util'
 import { merge } from '../utils'
 import { iFileLoader } from './fileLoaders'
 import { iConfigLogger, POJO } from '../BaseConfig'
-import { ConfigurationError, ErrorCodes } from '../errors'
+import { ConfigurationError, ConfigurationErrorCodes } from '../errors'
 
 export interface iLoad {
     (layers: (string | POJO)[], configDirectory: string): Promise<POJO>
@@ -25,7 +25,7 @@ export default function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]
             logger.debug(`Config scenario loaded: `, scenario)
             return scenario
         } catch (e) {
-            throw new ConfigurationError(ErrorCodes.LOADING_ERROR, 'Could not load configuration', e)
+            throw new ConfigurationError(ConfigurationErrorCodes.LOADING_ERROR, e, 'Could not load configuration')
         }
 
         async function loadLayer(basenameOrSubtree: string | POJO) {
@@ -37,9 +37,13 @@ export default function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]
             )
             if (!layerFilenames.length) {
                 logger.debug(
-                    new ConfigurationError(ErrorCodes.LOADING_ERROR, `Could not find a layer, skipping.`, {
-                        layerName: basenameOrSubtree,
-                    }),
+                    new ConfigurationError(
+                        ConfigurationErrorCodes.LOADING_ERROR,
+                        {
+                            layerName: basenameOrSubtree,
+                        },
+                        `Could not find a layer ${basenameOrSubtree}, skipping.`,
+                    ),
                 )
                 return {}
             }
@@ -47,9 +51,9 @@ export default function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]
             const loader = fileLoaders.find((loader) => layerTypes.includes(loader.name))
             if (!loader) {
                 throw new ConfigurationError(
-                    ErrorCodes.LOADING_ERROR,
-                    `Could not find loader for any of the ${layerFilenames}.`,
+                    ConfigurationErrorCodes.LOADING_ERROR,
                     { layerFilenames },
+                    `Could not find loader for any of the ${layerFilenames}.`,
                 )
             }
             const layerPath = path.join(

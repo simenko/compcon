@@ -13,4 +13,4 @@ export {
     iReaderCreator,
     iReader,
 } from './Compiler/readers'
-export { ConfigurationError, ErrorCodes } from './errors'
+export { ConfigurationError, ConfigurationErrorCodes } from './errors'

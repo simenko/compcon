@@ -1,6 +1,6 @@
 import { readdir } from 'fs'
 import Loader from './Loader'
-import { ConfigurationError, ErrorCodes } from '../errors'
+import { ConfigurationError, ConfigurationErrorCodes } from '../errors'
 import * as utils from '../utils'
 
 jest.mock('fs')
@@ -71,7 +71,7 @@ describe('Loader class', () => {
             await load(['config', 'extra-layer'], 'foo')
             const error = debugSpy.mock.calls[0][0]
             expect(error).toBeInstanceOf(ConfigurationError)
-            expect(error).toHaveProperty('code', ErrorCodes.LOADING_ERROR)
+            expect(error).toHaveProperty('code', ConfigurationErrorCodes.LOADING_ERROR)
             expect(error).toHaveProperty('details', { layerName: 'extra-layer' })
         })
     })

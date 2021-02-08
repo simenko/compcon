@@ -1,6 +1,6 @@
 import Compiler, { iCompile } from './Compiler/Compiler'
 import Loader, { iLoad } from './Loader/Loader'
-import { ConfigurationError, ErrorCodes } from './errors'
+import { ConfigurationError, ConfigurationErrorCodes } from './errors'
 import { js, json as jsonFileLoader, ts } from './Loader/fileLoaders'
 import { conventional } from './Compiler/readers'
 import { json, bool, num } from './Compiler/valueTransformers'
@@ -27,7 +27,11 @@ export function init<T>(
     /* eslint-enable no-redeclare */
 
     if (isInitialized) {
-        throw new ConfigurationError(ErrorCodes.INITIALIZATION_ERROR, 'The configuration can only be initialized once')
+        throw new ConfigurationError(
+            ConfigurationErrorCodes.INITIALIZATION_ERROR,
+            undefined,
+            'The configuration can only be initialized once',
+        )
     }
 
     let transform
