@@ -1,12 +1,14 @@
-import { POJO } from './BaseConfig'
-
 type errors = Error | Error[]
 
 export class ProperError<ErrorCodes> extends Error {
-    public readonly details?: POJO
+    public readonly details?: Record<string, unknown>
     public readonly reason?: errors
 
-    constructor(public readonly code: ErrorCodes, detailsOrReason?: POJO | errors, message?: string) {
+    constructor(
+        public readonly code: ErrorCodes,
+        detailsOrReason?: Record<string, unknown> | errors,
+        message?: string,
+    ) {
         super(message)
         Error.captureStackTrace(this, this.constructor)
         this.name = this.constructor.name
