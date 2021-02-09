@@ -1,12 +1,11 @@
 import Compiler, { iCompile } from './Compiler/Compiler'
 import Loader, { iLoad } from './Loader/Loader'
-import { ConfigurationError, ConfigurationErrorCodes } from './errors'
+import { ConfigurationError, Codes } from './ConfigurationError'
 import { js, json as jsonFileLoader, ts } from './Loader/fileLoaders'
 import { conventional } from './Compiler/readers'
 import { json, bool, num } from './Compiler/valueTransformers'
-import { classTransformer, iConfigLogger, POJO, validator } from './BaseConfig'
-import { TypedConfig } from './TypedConfig'
-import { Config } from './Config'
+import { classTransformer, iConfigLogger, POJO, validator, Config } from './Config'
+import { UntypedConfig } from './UntypedConfig'
 
 export interface iConfigInitOptions<T> {
     logger?: iConfigLogger
@@ -18,17 +17,17 @@ export interface iConfigInitOptions<T> {
 let isInitialized = false
 
 /* eslint-disable no-redeclare */
-export function init<T>(transform: classTransformer<T>, options?: iConfigInitOptions<T>): TypedConfig<T>
+export function init<T>(transform: classTransformer<T>, options?: iConfigInitOptions<T>): Config<T>
 export function init(options?: iConfigInitOptions<POJO>): Config
 export function init<T>(
     transformerOrOptions?: classTransformer<T> | iConfigInitOptions<T>,
     options: iConfigInitOptions<T> = {},
-): TypedConfig<T> | Config {
+): Config<T> | UntypedConfig {
     /* eslint-enable no-redeclare */
 
     if (isInitialized) {
         throw new ConfigurationError(
-            ConfigurationErrorCodes.INITIALIZATION_ERROR,
+            Codes.INITIALIZATION_ERROR,
             undefined,
             'The configuration can only be initialized once',
         )
@@ -50,6 +49,6 @@ export function init<T>(
 
     isInitialized = true
     return transform
-        ? new TypedConfig<T>(transform, logger, load, compile, validate)
-        : new Config(logger, load, compile, validate as validator<POJO>)
+        ? new Config<T>(transform, logger, load, compile, validate)
+        : new UntypedConfig(logger, load, compile, validate as validator<POJO>)
 }

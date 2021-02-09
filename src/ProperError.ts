@@ -10,9 +10,8 @@ export class ProperError<ErrorCodes> extends Error {
         message?: string,
     ) {
         super(message)
-        Error.captureStackTrace(this, this.constructor)
         this.name = this.constructor.name
-
+        Error.captureStackTrace(this, this.constructor)
         if (!detailsOrReason) {
             return
         }
@@ -26,11 +25,6 @@ export class ProperError<ErrorCodes> extends Error {
             }
         }
     }
-}
-
-// Use this until https://github.com/tc39/proposal-throw-expressions is here
-export const thrw = (e: Error): never => {
-    throw e
 }
 
 function isErrors(maybeErrors: unknown): maybeErrors is errors {

@@ -1,8 +1,7 @@
 import crypto from 'crypto'
 import rawFlatten, { unflatten as rawUnflatten } from 'flat'
-import { get as _get, has as _has, merge as _merge, cloneDeep } from 'lodash'
-import { POJO } from './BaseConfig'
-import { ConfigurationError, ConfigurationErrorCodes } from './errors'
+import { merge as _merge, cloneDeep } from 'lodash'
+import { POJO } from './Config'
 
 export function deepFreeze(obj: object): void {
     Object.getOwnPropertyNames(obj).forEach((prop) => {
@@ -39,13 +38,6 @@ export const randomString = (length = 32) =>
 export const flatten = (obj: POJO = {}): POJO => rawFlatten(obj, { safe: true })
 export const unflatten = (obj: POJO = {}): POJO => rawUnflatten(obj, { overwrite: true })
 
-export const has = (obj: POJO, path: string) => !path || _has(obj, path)
-export const get = (obj: POJO, path: string = '') => {
-    if (!has(obj, path)) {
-        throw new ConfigurationError(ConfigurationErrorCodes.ACCESS_ERROR, { path }, `Could not find path ${path}`)
-    }
-    return !path ? obj : _get(obj, path)
-}
 export const merge = (...objs: POJO[]): POJO => _merge({}, ...objs)
 export const clone = (obj: POJO) => cloneDeep(obj)
 

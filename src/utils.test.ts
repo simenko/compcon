@@ -1,5 +1,4 @@
-import { deepFreeze, get, has, merge, randomString, parseArgs, scheduleTimeout } from './utils'
-import { ConfigurationError } from './errors'
+import { deepFreeze, merge, randomString, parseArgs, scheduleTimeout } from './utils'
 
 describe('Utility functions', () => {
     describe('merge', () => {
@@ -11,35 +10,6 @@ describe('Utility functions', () => {
 
         it('Should replace arrays', async () => {
             expect(merge({ a: [1, 2, 3] }, { a: ['a', 'b', 'c'] })).toEqual({ a: ['a', 'b', 'c'] })
-        })
-    })
-
-    describe('has', () => {
-        it('Should return true for empty path', () => {
-            expect(has({}, '')).toEqual(true)
-        })
-
-        it('Should return true if an object has the path', () => {
-            expect(has({ a: { b: null } }, 'a.b')).toEqual(true)
-        })
-
-        it('Should return false if an object does not have the path', () => {
-            expect(has({ a: { b: null } }, 'a.c')).toEqual(false)
-        })
-    })
-
-    describe('get', () => {
-        it('Should return the whole object when called with empty path', () => {
-            expect(get({}, '')).toEqual({})
-        })
-
-        it('Should return the subtree or leaf for the correct path', () => {
-            expect(get({ a: { b: { c: 1 } } }, 'a.b')).toEqual({ c: 1 })
-            expect(get({ a: { b: { c: undefined } } }, 'a.b.c')).toEqual(undefined)
-        })
-
-        it('Should throw if the path not found', () => {
-            expect(() => get({}, 'a')).toThrow(ConfigurationError)
         })
     })
 

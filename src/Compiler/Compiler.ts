@@ -1,7 +1,7 @@
 import { iDefaultReaderCreator, iReader } from './readers'
 import { iValueTransformer } from './valueTransformers'
-import { iConfigLogger, POJO } from '../BaseConfig'
-import { ConfigurationError, ConfigurationErrorCodes } from '../errors'
+import { iConfigLogger, POJO } from '../Config'
+import { ConfigurationError, Codes } from '../ConfigurationError'
 import { flatten, randomString, scheduleTimeout, unflatten } from '../utils'
 
 const FakeSubtreeRoot = randomString()
@@ -44,7 +44,7 @@ export default function Compiler(
                 )
             } catch (e) {
                 throw new ConfigurationError(
-                    ConfigurationErrorCodes.COMPILATION_ERROR,
+                    Codes.COMPILATION_ERROR,
                     {
                         path,
                         reader: reader.name,
@@ -69,7 +69,7 @@ export default function Compiler(
                 unresolved.length && (details.unresolvedPaths = unresolved)
 
                 throw new ConfigurationError(
-                    ConfigurationErrorCodes.COMPILATION_ERROR,
+                    Codes.COMPILATION_ERROR,
                     details,
                     `Could not resolve config paths: ${[...missing, ...unresolved].join(', ')}`,
                 )

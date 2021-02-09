@@ -3,8 +3,8 @@ import { readdir } from 'fs'
 import { promisify } from 'util'
 import { merge } from '../utils'
 import { iFileLoader } from './fileLoaders'
-import { iConfigLogger, POJO } from '../BaseConfig'
-import { ConfigurationError, ConfigurationErrorCodes } from '../errors'
+import { iConfigLogger, POJO } from '../Config'
+import { ConfigurationError, Codes } from '../ConfigurationError'
 
 export interface iLoad {
     (layers: (string | POJO)[], configDirectory: string): Promise<POJO>
@@ -25,7 +25,7 @@ export default function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]
             logger.debug(`Config scenario loaded: `, scenario)
             return scenario
         } catch (e) {
-            throw new ConfigurationError(ConfigurationErrorCodes.LOADING_ERROR, e, 'Could not load configuration')
+            throw new ConfigurationError(Codes.LOADING_ERROR, e, 'Could not load configuration')
         }
 
         async function loadLayer(basenameOrSubtree: string | POJO) {
@@ -38,7 +38,7 @@ export default function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]
             if (!layerFilenames.length) {
                 logger.debug(
                     new ConfigurationError(
-                        ConfigurationErrorCodes.LOADING_ERROR,
+                        Codes.LOADING_ERROR,
                         {
                             layerName: basenameOrSubtree,
                         },
@@ -51,9 +51,9 @@ export default function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]
             const loader = fileLoaders.find((loader) => layerTypes.includes(loader.name))
             if (!loader) {
                 throw new ConfigurationError(
-                    ConfigurationErrorCodes.LOADING_ERROR,
+                    Codes.LOADING_ERROR,
                     { layerFilenames },
-                    `Could not find loader for any of the ${layerFilenames}.`,
+                    `Could not find loader for ${layerFilenames}.`,
                 )
             }
             const layerPath = path.join(

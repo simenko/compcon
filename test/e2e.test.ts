@@ -7,7 +7,7 @@ const config = Config<ReadonlyAppConfig>(transform, { validate })
 
 describe('Config layers loading', () => {
     it('Should load config layers in order', async () => {
-        const configuration = (await config.create(['base', 'prod'], path.resolve(__dirname, 'testConfig'))).get()
+        const configuration = (await config.create(['base', 'prod'], path.resolve(__dirname, 'testConfig'))).getClass()
         console.log(configuration.db)
     })
 })

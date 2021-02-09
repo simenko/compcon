@@ -1,6 +1,6 @@
 import { readdir } from 'fs'
 import Loader from './Loader'
-import { ConfigurationError, ConfigurationErrorCodes } from '../errors'
+import { Codes, ConfigurationError } from '../ConfigurationError'
 import * as utils from '../utils'
 
 jest.mock('fs')
@@ -56,7 +56,13 @@ describe('Loader class', () => {
                 cb(null, ['config.json']),
             )
             const load = Loader(console, [js])
-            await expect(load(['config'], 'foo')).rejects.toThrow(ConfigurationError)
+            try {
+                await load(['config'], 'foo')
+            } catch (e) {
+                expect(e).toHaveProperty('code', Codes.LOADING_ERROR)
+                expect(e.reason).toHaveProperty('code', Codes.LOADING_ERROR)
+                expect(e.reason).toHaveProperty('details', { layerFilenames: ['config.json'] })
+            }
         })
 
         it('Should log error if there are no files matching layer name found, but keep loading', async () => {
@@ -71,7 +77,7 @@ describe('Loader class', () => {
             await load(['config', 'extra-layer'], 'foo')
             const error = debugSpy.mock.calls[0][0]
             expect(error).toBeInstanceOf(ConfigurationError)
-            expect(error).toHaveProperty('code', ConfigurationErrorCodes.LOADING_ERROR)
+            expect(error).toHaveProperty('code', Codes.LOADING_ERROR)
             expect(error).toHaveProperty('details', { layerName: 'extra-layer' })
         })
     })

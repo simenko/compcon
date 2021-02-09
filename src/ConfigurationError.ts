@@ -1,6 +1,6 @@
 import { ProperError } from './ProperError'
 
-export enum ConfigurationErrorCodes {
+export enum Codes {
     ACCESS_ERROR = 'ACCESS_ERROR',
     LOADING_ERROR = 'LOADING_ERROR',
     COMPILATION_ERROR = 'COMPILATION_ERROR',
@@ -9,4 +9,4 @@ export enum ConfigurationErrorCodes {
     INITIALIZATION_ERROR = 'INITIALIZATION_ERROR',
 }
 
-export class ConfigurationError extends ProperError<ConfigurationErrorCodes> {}
+export class ConfigurationError extends ProperError<Codes> {}

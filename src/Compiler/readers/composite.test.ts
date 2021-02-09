@@ -1,7 +1,7 @@
 import { conventional, firstOf } from './composite'
 import { iReader } from './common'
 import { iConfigGetter } from '../Compiler'
-import { ConfigurationError, ConfigurationErrorCodes } from '../../errors'
+import { Codes, ConfigurationError } from '../../ConfigurationError'
 
 const mockGet: iConfigGetter = jest.fn(async (path: string) => path)
 
@@ -38,7 +38,7 @@ describe('Composite readers', () => {
             expect(value).toEqual(2)
             const error = logDebugSpy.mock.calls[0][0]
             expect(error).toBeInstanceOf(ConfigurationError)
-            expect(error.code).toEqual(ConfigurationErrorCodes.READER_ERROR)
+            expect(error.code).toEqual(Codes.READER_ERROR)
         })
     })
 

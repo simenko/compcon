@@ -1,4 +1,4 @@
-import { iConfigLogger } from '../../BaseConfig'
+import { iConfigLogger } from '../../Config'
 import { iValueTransformer, composeValueTransformers, passThrough } from '../valueTransformers'
 import { iConfigGetter } from '../Compiler'
 import { iPathTransformer, identity } from '../pathTransformers'

@@ -1,12 +1,12 @@
 import { iValueTransformer } from '../valueTransformers'
-import { ConfigurationError, ConfigurationErrorCodes } from '../../errors'
+import { ConfigurationError, Codes } from '../../ConfigurationError'
 import { iDefaultReaderCreator, withTransformers } from './common'
 import { arg, env } from './basic'
 
 export const firstOf = (readersOrValues: unknown[], valueTransformer?: iValueTransformer<unknown>) => {
     if (!Array.isArray(readersOrValues)) {
         throw new ConfigurationError(
-            ConfigurationErrorCodes.READER_ERROR,
+            Codes.READER_ERROR,
             undefined,
             `Array of readers or default value expected, got ${typeof readersOrValues} instead.`,
         )
@@ -26,7 +26,7 @@ export const firstOf = (readersOrValues: unknown[], valueTransformer?: iValueTra
                 } catch (e) {
                     logger.debug(
                         new ConfigurationError(
-                            ConfigurationErrorCodes.READER_ERROR,
+                            Codes.READER_ERROR,
                             {
                                 reason: e,
                                 reader: readerOrValue.name,
