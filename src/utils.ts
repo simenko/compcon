@@ -3,10 +3,18 @@ import rawFlatten, { unflatten as rawUnflatten } from 'flat'
 import { merge as _merge, cloneDeep } from 'lodash'
 import { POJO } from './Config'
 
-export function deepFreeze(obj: object): void {
+export function deepFreeze(obj: unknown): void {
+    if (obj === null) {
+        return
+    }
+    // Arrays are OK
+    if (typeof obj !== 'object') {
+        return
+    }
     Object.getOwnPropertyNames(obj).forEach((prop) => {
-        if (!Object.isFrozen(obj[prop as keyof typeof obj])) {
-            deepFreeze(obj[prop as keyof typeof obj])
+        // We know for sure that prop is an obj's key and obj is not null, but Typescript seems to not see it
+        if (!Object.isFrozen(obj![prop as keyof typeof obj])) {
+            deepFreeze(obj![prop as keyof typeof obj])
         }
     })
     Object.freeze(obj)

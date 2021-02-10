@@ -10,8 +10,10 @@ export class ProperError<ErrorCodes> extends Error {
         message?: string,
     ) {
         super(message)
+        // For Nodejs only, need alternative solution for minified cross-browser code
         this.name = this.constructor.name
         Error.captureStackTrace(this, this.constructor)
+
         if (!detailsOrReason) {
             return
         }
@@ -25,6 +27,10 @@ export class ProperError<ErrorCodes> extends Error {
             }
         }
     }
+}
+
+export function thrw(e: Error): never {
+    throw e
 }
 
 function isErrors(maybeErrors: unknown): maybeErrors is errors {

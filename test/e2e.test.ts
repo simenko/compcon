@@ -2,7 +2,10 @@ import path from 'path'
 import Config from '../src'
 import { ReadonlyAppConfig, validate, transform } from './testConfig/schema'
 
-const config = Config<ReadonlyAppConfig>(transform, { validate })
+// With type safety
+const config = Config<ReadonlyAppConfig>({ transform, validate })
+
+// Without type safety
 // const config = Config()
 
 describe('Config layers loading', () => {

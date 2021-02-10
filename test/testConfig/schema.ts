@@ -1,5 +1,6 @@
 import 'reflect-metadata'
 
+// Alternatives: io-ts, https://github.com/JohnWeisz/TypedJSON
 import { IsString, ValidateNested, validateSync } from 'class-validator'
 import { plainToClass, Type } from 'class-transformer'
 import { validator, classTransformer, POJO, ConfigurationError, Codes } from '../../src'
@@ -35,7 +36,7 @@ class AppConfig {
 
 export type ReadonlyAppConfig = Readonly<AppConfig>
 
-export const validate: validator<AppConfig> = (config: AppConfig) => {
+export const validate: validator<ReadonlyAppConfig> = (config: ReadonlyAppConfig) => {
     const validationErrors = validateSync(config, {
         validationError: { target: false },
         whitelist: true,
@@ -49,4 +50,4 @@ export const validate: validator<AppConfig> = (config: AppConfig) => {
     }
 }
 
-export const transform: classTransformer<AppConfig> = (rawConfig: POJO) => plainToClass(AppConfig, rawConfig)
+export const transform: classTransformer<ReadonlyAppConfig> = (rawConfig: POJO) => plainToClass(AppConfig, rawConfig)

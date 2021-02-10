@@ -3,17 +3,19 @@ import { iLoad } from './Loader/Loader'
 import { performance } from 'perf_hooks'
 import { EventEmitter } from 'events'
 import { clone, deepFreeze } from './utils'
+import { Codes, ConfigurationError } from './ConfigurationError'
+import { get, has } from 'lodash'
 
 export type POJO = Record<string, unknown>
 export type classTransformer<T> = (rawConfig: POJO) => T
-export type validator<T = POJO> = (config: T) => void
+export type validator<T> = (config: T) => void
 
 export interface iConfigLogger {
     info(message?: unknown, ...optionalParams: unknown[]): void
     debug(message?: unknown, ...optionalParams: unknown[]): void
 }
 
-export class Config<T = POJO> extends EventEmitter {
+export class Config<T> extends EventEmitter {
     constructor(
         private readonly transform: classTransformer<T>,
         private readonly logger: iConfigLogger = console,
@@ -31,6 +33,17 @@ export class Config<T = POJO> extends EventEmitter {
 
     public getClass(): T {
         return this.config
+    }
+
+    public get(path?: string): unknown {
+        if (!this.has(path)) {
+            throw new ConfigurationError(Codes.ACCESS_ERROR, { path }, `Could not find path ${path}`)
+        }
+        return !path ? this.config : get(this.config, path)
+    }
+
+    public has(path?: string) {
+        return !path || has(this.config, path)
     }
 
     public async create(layers: (string | POJO)[], configDirectory?: string): Promise<this> {
@@ -54,7 +67,7 @@ export class Config<T = POJO> extends EventEmitter {
         const rawConfig = await this.compile(scenario)
         const transformedConfig = this.transform(rawConfig)
         this.validate && this.validate(transformedConfig)
-        deepFreeze(transformedConfig as POJO)
+        deepFreeze(transformedConfig)
         this.scenario = scenario
         this.config = transformedConfig
 
