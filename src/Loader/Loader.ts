@@ -3,15 +3,15 @@ import { readdir } from 'fs'
 import { promisify } from 'util'
 import { merge } from '../utils'
 import { iFileLoader } from './fileLoaders'
-import { iConfigLogger, POJO } from '../Config'
+import { iConfigLogger, scenario } from '../Config'
 import { ConfigurationError, Codes } from '../ConfigurationError'
 
 export interface iLoad {
-    (layers: (string | POJO)[], configDirectory: string): Promise<POJO>
+    (layers: (string | scenario)[], configDirectory: string): Promise<scenario>
 }
 
 export function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]) {
-    return async function load(layers: (string | POJO)[], configDirectory: string): Promise<POJO> {
+    return async function load(layers: (string | scenario)[], configDirectory: string): Promise<scenario> {
         let configDirFileList: string[]
         try {
             if (configDirectory) {
@@ -28,7 +28,7 @@ export function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]) {
             throw new ConfigurationError(Codes.LOADING_ERROR, e, 'Could not load configuration')
         }
 
-        async function loadLayer(basenameOrSubtree: string | POJO) {
+        async function loadLayer(basenameOrSubtree: string | scenario) {
             if (typeof basenameOrSubtree === 'object') {
                 return basenameOrSubtree
             }

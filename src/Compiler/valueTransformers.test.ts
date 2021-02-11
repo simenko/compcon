@@ -1,6 +1,6 @@
 import { json, bool, num, composeValueTransformers } from './valueTransformers'
 
-describe('Transformers', () => {
+describe('Value transformers', () => {
     describe('JSON transformer', () => {
         it('Should parse null', () => {
             expect(json('null')).toEqual(null)

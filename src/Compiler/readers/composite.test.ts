@@ -18,7 +18,7 @@ describe('Composite readers', () => {
         })
 
         it('Should return literal value if given, and no reader have returned a value', async () => {
-            const mockReader1: jest.MockedFunction<iReader> = jest.fn(async (_1, _2, _3) => undefined)
+            const mockReader1: jest.MockedFunction<iReader> = jest.fn(async (_1, _2, _3) => null)
             const reader = firstOf([mockReader1, 'default'])
             const value = await reader('a', console, mockGet)
             expect(mockReader1).toHaveBeenCalledWith('a', console, mockGet)
@@ -54,22 +54,22 @@ describe('Composite readers', () => {
 
         it('Should check args first', async () => {
             process.argv.push('--a=testArg')
-            const reader = conventional()
+            const reader = conventional('default')
             const value = await reader('a', console, mockGet)
             expect(value).toEqual('testArg')
         })
 
         it('Should check env if a value could not be found in args', async () => {
             process.env.A = 'testEnv'
-            const reader = conventional()
+            const reader = conventional('default')
             const value = await reader('a', console, mockGet)
             expect(value).toEqual('testEnv')
         })
 
         it('Should return default value if args and env do not have it', async () => {
-            const reader = conventional('testDefault')
+            const reader = conventional('default')
             const value = await reader('a', console, mockGet)
-            expect(value).toEqual('testDefault')
+            expect(value).toEqual('default')
         })
     })
 })

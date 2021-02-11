@@ -1,37 +1,39 @@
 import { iDefaultReaderCreator, iReader } from './readers'
 import { iValueTransformer } from './valueTransformers'
-import { iConfigLogger, POJO } from '../Config'
+import { configLeaf, iConfigLogger, scenarioLeaf, tree } from '../Config'
 import { ConfigurationError, Codes } from '../ConfigurationError'
 import { flatten, randomString, scheduleTimeout, unflatten } from '../utils'
 
 const FakeSubtreeRoot = randomString()
+export type pendingConfigLeaf = configLeaf | ReturnType<iReader>
 
 interface iMissingPathsTracker {
-    [key: string]: ((value?: unknown) => void)[]
+    [key: string]: (() => void)[]
 }
 
 export interface iConfigGetter {
-    (path: string): Promise<unknown>
+    (path: string): Promise<configLeaf | tree<configLeaf>>
 }
 
 export interface iCompile {
-    (scenario: POJO): Promise<POJO>
+    (scenario: tree<scenarioLeaf>): Promise<tree<configLeaf>>
 }
 
 export function Compiler(
     logger: iConfigLogger,
     defaultReaderCreator: iDefaultReaderCreator,
-    defaultTransformers: iValueTransformer<unknown>[],
+    defaultTransformers: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[],
     compilationTimeout = 5000,
 ) {
-    return async function compile(scenario: POJO): Promise<POJO> {
-        const config = flatten(scenario)
+    return async function compile(scenario: tree<scenarioLeaf>): Promise<tree<configLeaf>> {
+        const flatScenario = flatten(scenario)
+        const config: { [key: string]: pendingConfigLeaf } = {}
         const missingPaths: iMissingPathsTracker = {}
 
-        Object.entries(config).forEach(([path, valueOrReader]) => {
+        Object.entries(flatScenario).forEach(([path, valueOrReader]) => {
             let reader: iReader
             if (typeof valueOrReader === 'function') {
-                reader = valueOrReader as iReader
+                reader = valueOrReader
             } else {
                 reader = defaultReaderCreator(valueOrReader)
             }
@@ -62,7 +64,7 @@ export function Compiler(
             timeoutPromise.catch(() => {
                 const missing = Object.keys(missingPaths)
                 const unresolved = Object.entries(config)
-                    .filter(([_, value]) => value && typeof (value as Promise<unknown>).then === 'function')
+                    .filter(([_, value]) => value && typeof (value as ReturnType<iReader>).then === 'function')
                     .map(([key]) => key)
                 const details: Partial<Record<'missingPaths' | 'unresolvedPaths', string[]>> = {}
                 missing.length && (details.missingPaths = missing)
@@ -78,9 +80,14 @@ export function Compiler(
         return unflatten(config)
     }
 
-    function insertValue(path: string, value: unknown, config: POJO, missingPaths: iMissingPathsTracker) {
+    function insertValue(
+        path: string,
+        value: configLeaf | tree<configLeaf> | configLeaf[],
+        config: { [key: string]: pendingConfigLeaf },
+        missingPaths: iMissingPathsTracker,
+    ) {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
-            Object.entries(flatten(value as POJO)).forEach(([subPath, value]) =>
+            Object.entries(flatten(value)).forEach(([subPath, value]) =>
                 insertValue(path + '.' + subPath, value, config, missingPaths),
             )
         } else {
@@ -92,20 +99,23 @@ export function Compiler(
         }
     }
 
-    function createGetter(config: POJO, missingPaths: iMissingPathsTracker): iConfigGetter {
+    function createGetter(
+        config: { [key: string]: pendingConfigLeaf },
+        missingPaths: iMissingPathsTracker,
+    ): iConfigGetter {
         return async (path = '') => {
             let matchingEntries = Object.entries(config).filter(([key]) => key.startsWith(path))
             if (!matchingEntries.length) {
-                const pathWatcher = new Promise((resolve) => {
+                const pathWatcher = new Promise<void>((resolve) => {
                     missingPaths[path] = [...(missingPaths[path] || []), resolve]
                 })
                 await pathWatcher
                 matchingEntries = Object.entries(config).filter(([key]) => key.startsWith(path))
             }
-            const result: POJO = unflatten(
+            const result: tree<configLeaf> = unflatten(
                 matchingEntries
-                    .map(([key, value]) => [key.replace(path, FakeSubtreeRoot), value])
-                    .reduce((acc, [key, value]) => ({ ...acc, [key as string]: value }), {}),
+                    .map<[string, pendingConfigLeaf]>(([key, value]) => [key.replace(path, FakeSubtreeRoot), value])
+                    .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
             )
             return result[FakeSubtreeRoot]
         }

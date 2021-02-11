@@ -1,5 +1,5 @@
-import { iConfigLogger } from '../../Config'
-import { iValueTransformer, composeValueTransformers, passThrough } from '../valueTransformers'
+import { configLeaf, iConfigLogger, tree } from '../../Config'
+import { iValueTransformer, composeValueTransformers } from '../valueTransformers'
 import { iConfigGetter } from '../Compiler'
 import { iPathTransformer, identity } from '../pathTransformers'
 
@@ -10,22 +10,22 @@ export interface iReader {
         path: string,
         logger: iConfigLogger,
         get: iConfigGetter,
-        defaultTransformers?: iValueTransformer<unknown>[],
-    ): Promise<unknown>
+        defaultTransformers?: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[],
+    ): Promise<configLeaf | tree<configLeaf>>
 }
 
 export interface iReaderCreator {
-    (key?: string | iPathTransformer, valueTransformer?: iValueTransformer<unknown>): iReader
+    (key?: string | iPathTransformer, valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>): iReader
 }
 
 export interface iDefaultReaderCreator {
-    (defaultValue?: unknown): iReader
+    (defaultValue: configLeaf): iReader
 }
 
 export function withTransformers(
     reader: iReader,
     pathTransformer: string | iPathTransformer = identity,
-    valueTransformer: iValueTransformer<unknown> = passThrough,
+    valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>,
 ): iReader {
     if (reader.name.endsWith(ReaderSuffix)) {
         return reader
@@ -34,14 +34,15 @@ export function withTransformers(
         path: string,
         logger: iConfigLogger,
         get: iConfigGetter,
-        defaultTransformers: iValueTransformer<unknown>[] = [],
+        defaultTransformers: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[] = [],
     ) {
         const value = await reader(
             typeof pathTransformer === 'string' ? pathTransformer : pathTransformer(path),
             logger,
             get,
         )
-        return composeValueTransformers(valueTransformer, ...defaultTransformers)(value)
+        const transformers = valueTransformer ? [valueTransformer, ...defaultTransformers] : defaultTransformers
+        return composeValueTransformers(...transformers)(value)
     }
     Object.defineProperty(readerWithTransformers, 'name', { value: `${reader.name}${ReaderSuffix}` })
     return readerWithTransformers

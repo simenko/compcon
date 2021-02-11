@@ -1,7 +1,8 @@
 import crypto from 'crypto'
 import rawFlatten, { unflatten as rawUnflatten } from 'flat'
 import { merge as _merge, cloneDeep } from 'lodash'
-import { POJO } from './Config'
+import { scenario, scenarioLeaf, configLeaf, tree } from './Config'
+import { pendingConfigLeaf } from './Compiler'
 
 export function deepFreeze(obj: unknown): void {
     if (obj === null) {
@@ -20,7 +21,7 @@ export function deepFreeze(obj: unknown): void {
     Object.freeze(obj)
 }
 
-interface iCancelableTimeout extends Promise<unknown> {
+interface iCancelableTimeout extends Promise<void> {
     cancel: () => void
 }
 export function scheduleTimeout(time = 2000) {
@@ -29,7 +30,7 @@ export function scheduleTimeout(time = 2000) {
         const timeout = setTimeout(reject, time)
         cancel = () => {
             clearTimeout(timeout)
-            resolve(undefined)
+            resolve()
         }
     })
     timeoutPromise.cancel = cancel
@@ -42,7 +43,7 @@ export const randomString = (length = 32) =>
         .toString('hex')
         .substr(0, length)
 
-export const parseArgs = (argv: string[]): POJO =>
+export const parseArgs = (argv: string[]): { [key: string]: configLeaf } =>
     argv
         .filter((arg) => arg.startsWith('--'))
         .map((arg) => {
@@ -52,7 +53,13 @@ export const parseArgs = (argv: string[]): POJO =>
         })
         .reduce((args, pair) => ({ ...args, ...pair }), {})
 
-export const flatten = (obj: POJO = {}): POJO => rawFlatten(obj, { safe: true })
-export const unflatten = (obj: POJO = {}): POJO => rawUnflatten(obj, { overwrite: true })
-export const merge = (...objs: POJO[]): POJO => _merge({}, ...objs)
-export const clone = (obj: POJO) => cloneDeep(obj)
+/* eslint-disable no-redeclare */
+export function flatten(obj: tree<configLeaf>): { [key: string]: configLeaf }
+export function flatten(obj: tree<scenarioLeaf>): { [key: string]: scenarioLeaf }
+export function flatten(obj: tree<scenarioLeaf> | tree<configLeaf>): { [key: string]: scenarioLeaf | configLeaf } {
+    return rawFlatten(obj, { safe: true })
+}
+export const unflatten = (obj: { [key: string]: pendingConfigLeaf }): tree<configLeaf> =>
+    rawUnflatten(obj, { overwrite: true })
+export const merge = (...objs: scenario[]): scenario => _merge({}, ...objs)
+export const clone = (obj: scenario): scenario => cloneDeep(obj)

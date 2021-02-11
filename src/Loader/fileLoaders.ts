@@ -1,7 +1,7 @@
-import { POJO } from '../Config'
+import { scenario } from '../Config'
 
 export interface iFileLoader {
-    (filename: string): Promise<POJO>
+    (filename: string): Promise<scenario>
 }
 
 export const ts: iFileLoader = async function ts(filename) {

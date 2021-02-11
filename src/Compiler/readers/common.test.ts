@@ -11,7 +11,6 @@ const mockReader: iReader = jest.fn(async function reader(_1, _2, _3) {
 describe('withTransformers decorator', () => {
     const mockPathTransformer: pathTransformers.iPathTransformer = jest.fn(() => 'x')
     const mockValueTransformer: valueTransformers.iValueTransformer<number> = jest.fn(() => 2)
-    const passThroughSpy = jest.spyOn(valueTransformers, 'passThrough')
     const identitySpy = jest.spyOn(pathTransformers, 'identity')
 
     beforeEach(() => {
@@ -21,14 +20,12 @@ describe('withTransformers decorator', () => {
     it('Should use default path and value transformers unless custom ones are given', async () => {
         const mockReaderWithTransformers = withTransformers(mockReader)
         await mockReaderWithTransformers('a', console, mockGet)
-        expect(passThroughSpy).toHaveBeenCalledWith(1)
         expect(identitySpy).toHaveBeenCalledWith('a')
     })
 
     it('Should use given path and value transformers instead of default ones', async () => {
         const mockReaderWithTransformers = withTransformers(mockReader, mockPathTransformer, mockValueTransformer)
         await mockReaderWithTransformers('a', console, mockGet)
-        expect(passThroughSpy).not.toHaveBeenCalled()
         expect(mockValueTransformer).toHaveBeenCalledWith(1)
         expect(identitySpy).not.toHaveBeenCalled()
         expect(mockPathTransformer).toHaveBeenCalledWith('a')

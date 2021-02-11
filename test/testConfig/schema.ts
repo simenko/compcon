@@ -3,7 +3,8 @@ import 'reflect-metadata'
 // Alternatives: io-ts, https://github.com/JohnWeisz/TypedJSON
 import { IsString, ValidateNested, validateSync } from 'class-validator'
 import { plainToClass, Type } from 'class-transformer'
-import { validator, classTransformer, POJO, ConfigurationError, Codes } from '../../src'
+import { validator, classTransformer, ConfigurationError, Codes } from '../../src'
+import { configLeaf, tree } from '../../src/Config'
 
 class DbConfiguration {
     @IsString()
@@ -50,4 +51,5 @@ export const validate: validator<ReadonlyAppConfig> = (config: ReadonlyAppConfig
     }
 }
 
-export const transform: classTransformer<ReadonlyAppConfig> = (rawConfig: POJO) => plainToClass(AppConfig, rawConfig)
+export const transform: classTransformer<ReadonlyAppConfig> = (rawConfig: tree<configLeaf>) =>
+    plainToClass(AppConfig, rawConfig)

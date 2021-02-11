@@ -5,9 +5,14 @@ import { EventEmitter } from 'events'
 import { clone, deepFreeze } from './utils'
 import { Codes, ConfigurationError } from './ConfigurationError'
 import { get, has } from 'lodash'
+import { iReader } from './Compiler/readers'
 
-export type POJO = Record<string, unknown>
-export type classTransformer<T> = (rawConfig: POJO) => T
+export type tree<LeafType> = { [key: string]: LeafType | tree<LeafType> }
+export type configLeaf = string | number | boolean | null | configLeaf[]
+export type scenarioLeaf = configLeaf | iReader
+export type scenario = tree<scenarioLeaf>
+
+export type classTransformer<T> = (rawConfig: tree<configLeaf>) => T
 export type validator<T> = (config: T) => void
 
 export interface iConfigLogger {
@@ -22,13 +27,13 @@ export interface iConfigOptions<T> {
     validate?: validator<T>
 }
 
-export class Config<T = POJO> extends EventEmitter {
+export class Config<T = tree<configLeaf>> extends EventEmitter {
     constructor(options: iConfigOptions<T> = {}) {
         super()
         this.logger = options.logger ?? console
         this.load = options.load ?? Loader(this.logger, [jsonFileLoader, js, ts])
         this.compile = options.compile ?? Compiler(this.logger, conventional, [json, bool, num])
-        this.transform = options.transform ?? ((c: POJO): T => (c as unknown) as T)
+        this.transform = options.transform ?? ((c: tree<configLeaf>): T => (c as unknown) as T)
         this.validate = options.validate ?? ((_1) => {})
     }
 
@@ -37,16 +42,16 @@ export class Config<T = POJO> extends EventEmitter {
     private readonly compile!: iCompile
     private readonly transform!: classTransformer<T>
     private readonly validate!: validator<T>
-    protected scenario: POJO = {}
+    protected scenario: scenario = {}
     protected config!: T
     private buildId = 0
-    private buildQueue: Record<number, Promise<unknown>> = {}
+    private buildQueue: Record<number, Promise<void>> = {}
 
     public getClass(): T {
         return this.config
     }
 
-    public get(path?: string): unknown {
+    public get(path?: string): configLeaf | tree<configLeaf> {
         if (!this.has(path)) {
             throw new ConfigurationError(Codes.ACCESS_ERROR, { path }, `Could not find path ${path}`)
         }
@@ -57,15 +62,15 @@ export class Config<T = POJO> extends EventEmitter {
         return !path || has(this.config, path)
     }
 
-    public async create(layers: (string | POJO)[], configDirectory?: string): Promise<this> {
+    public async create(layers: (string | scenario)[], configDirectory?: string): Promise<this> {
         return this.build(layers, configDirectory)
     }
 
-    public async update(layers: (string | POJO)[], configDirectory?: string): Promise<this> {
+    public async update(layers: (string | scenario)[], configDirectory?: string): Promise<this> {
         return this.build([clone(this.scenario), ...layers], configDirectory)
     }
 
-    private async build(layers: (string | POJO)[] = [], configDirectory: string = ''): Promise<this> {
+    private async build(layers: (string | scenario)[] = [], configDirectory: string = ''): Promise<this> {
         const enqueued = performance.now()
         const dequeue = await this.enqueueBuild()
         const started = performance.now()
@@ -102,7 +107,7 @@ export class Config<T = POJO> extends EventEmitter {
         const previousBuilds = Object.values(this.buildQueue)
 
         this.buildId++
-        let resolver: (v?: unknown) => void
+        let resolver: (v?: undefined) => void
         this.buildQueue[this.buildId] = new Promise((resolve) => {
             resolver = resolve
         })

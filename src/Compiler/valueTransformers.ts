@@ -1,11 +1,11 @@
 import { toNumber as _toNumber } from 'lodash'
-import { POJO } from '../Config'
+import { configLeaf, tree } from '../Config'
 
 export interface iValueTransformer<T> {
-    (value: unknown): T | undefined
+    (value: configLeaf | tree<configLeaf>): T
 }
 
-export const json: iValueTransformer<POJO> = (value) => {
+export const json: iValueTransformer<configLeaf | tree<configLeaf> | undefined> = (value) => {
     if (typeof value !== 'string') {
         return undefined
     }
@@ -16,7 +16,7 @@ export const json: iValueTransformer<POJO> = (value) => {
     }
 }
 
-export const bool: iValueTransformer<boolean> = (value) => {
+export const bool: iValueTransformer<boolean | undefined> = (value) => {
     if (typeof value !== 'string') {
         return undefined
     }
@@ -28,7 +28,7 @@ export const bool: iValueTransformer<boolean> = (value) => {
     return undefined
 }
 
-export const num: iValueTransformer<number> = (value) => {
+export const num: iValueTransformer<number | undefined> = (value) => {
     // Lodash toNumber() converts '' to 0 which is undesirable, hence the second check
     if (typeof value !== 'string' || value === '') {
         return undefined
@@ -40,17 +40,14 @@ export const num: iValueTransformer<number> = (value) => {
     return undefined
 }
 
-export const passThrough: iValueTransformer<undefined> = (_: unknown) => undefined
-
-const identity: iValueTransformer<unknown> = (v) => v
-
-export const composeValueTransformers = (...transformers: iValueTransformer<unknown>[]): iValueTransformer<unknown> => (
-    value: unknown,
-) => {
-    for (const t of [...transformers, identity]) {
+export const composeValueTransformers: (
+    ...transformers: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[]
+) => iValueTransformer<configLeaf | tree<configLeaf>> = (...transformers) => (value: configLeaf | tree<configLeaf>) => {
+    for (const t of [...transformers]) {
         const transformedValue = t(value)
         if (transformedValue !== undefined) {
             return transformedValue
         }
     }
+    return value
 }
