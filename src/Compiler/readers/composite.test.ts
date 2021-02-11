@@ -8,8 +8,8 @@ const mockGet: iConfigGetter = jest.fn(async (path: string) => path)
 describe('Composite readers', () => {
     describe('firstOf reader', () => {
         it('Should apply readers one by one and return the first obtained value', async () => {
-            const mockReader1: iReader = jest.fn(async () => 1)
-            const mockReader2: iReader = jest.fn(async () => 2)
+            const mockReader1: jest.MockedFunction<iReader> = jest.fn(async (_1, _2, _3) => 1)
+            const mockReader2: jest.MockedFunction<iReader> = jest.fn(async (_1, _2, _3) => 2)
             const reader = firstOf([mockReader1, mockReader2])
             const value = await reader('a', console, mockGet)
             expect(mockReader1).toHaveBeenCalledWith('a', console, mockGet)
@@ -18,7 +18,7 @@ describe('Composite readers', () => {
         })
 
         it('Should return literal value if given, and no reader have returned a value', async () => {
-            const mockReader1: iReader = jest.fn(async () => undefined)
+            const mockReader1: jest.MockedFunction<iReader> = jest.fn(async (_1, _2, _3) => undefined)
             const reader = firstOf([mockReader1, 'default'])
             const value = await reader('a', console, mockGet)
             expect(mockReader1).toHaveBeenCalledWith('a', console, mockGet)
@@ -26,10 +26,11 @@ describe('Composite readers', () => {
         })
 
         it('Should log an error if a reader crashed, but keep going', async () => {
-            const mockReader1: iReader = jest.fn(async () => {
+            const mockReader1: jest.MockedFunction<iReader> = jest.fn(async (_1, _2, _3) => {
                 throw new Error('Test')
             })
-            const mockReader2: iReader = jest.fn(async () => 2)
+            Object.defineProperty(mockReader1, 'name', { value: 'mockReader1' })
+            const mockReader2: jest.MockedFunction<iReader> = jest.fn(async (_1, _2, _3) => 2)
             const reader = firstOf([mockReader1, mockReader2])
             const logDebugSpy = jest.spyOn(console, 'debug')
             const value = await reader('a', console, mockGet)

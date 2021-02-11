@@ -18,7 +18,7 @@ export interface iCompile {
     (scenario: POJO): Promise<POJO>
 }
 
-export default function Compiler(
+export function Compiler(
     logger: iConfigLogger,
     defaultReaderCreator: iDefaultReaderCreator,
     defaultTransformers: iValueTransformer<unknown>[],

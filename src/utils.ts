@@ -23,7 +23,6 @@ export function deepFreeze(obj: unknown): void {
 interface iCancelableTimeout extends Promise<unknown> {
     cancel: () => void
 }
-
 export function scheduleTimeout(time = 2000) {
     let cancel
     const timeoutPromise: Partial<iCancelableTimeout> = new Promise((resolve, reject) => {
@@ -43,12 +42,6 @@ export const randomString = (length = 32) =>
         .toString('hex')
         .substr(0, length)
 
-export const flatten = (obj: POJO = {}): POJO => rawFlatten(obj, { safe: true })
-export const unflatten = (obj: POJO = {}): POJO => rawUnflatten(obj, { overwrite: true })
-
-export const merge = (...objs: POJO[]): POJO => _merge({}, ...objs)
-export const clone = (obj: POJO) => cloneDeep(obj)
-
 export const parseArgs = (argv: string[]): POJO =>
     argv
         .filter((arg) => arg.startsWith('--'))
@@ -58,3 +51,8 @@ export const parseArgs = (argv: string[]): POJO =>
             return { [key.replace('--', '')]: value === undefined ? true : value }
         })
         .reduce((args, pair) => ({ ...args, ...pair }), {})
+
+export const flatten = (obj: POJO = {}): POJO => rawFlatten(obj, { safe: true })
+export const unflatten = (obj: POJO = {}): POJO => rawUnflatten(obj, { overwrite: true })
+export const merge = (...objs: POJO[]): POJO => _merge({}, ...objs)
+export const clone = (obj: POJO) => cloneDeep(obj)

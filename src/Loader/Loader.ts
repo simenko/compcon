@@ -10,7 +10,7 @@ export interface iLoad {
     (layers: (string | POJO)[], configDirectory: string): Promise<POJO>
 }
 
-export default function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]) {
+export function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]) {
     return async function load(layers: (string | POJO)[], configDirectory: string): Promise<POJO> {
         let configDirFileList: string[]
         try {

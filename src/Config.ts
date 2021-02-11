@@ -1,5 +1,5 @@
-import { iCompile } from './Compiler/Compiler'
-import { iLoad } from './Loader/Loader'
+import { bool, Compiler, conventional, iCompile, json, num } from './Compiler'
+import { iLoad, js, json as jsonFileLoader, Loader, ts } from './Loader'
 import { performance } from 'perf_hooks'
 import { EventEmitter } from 'events'
 import { clone, deepFreeze } from './utils'
@@ -14,18 +14,29 @@ export interface iConfigLogger {
     info(message?: unknown, ...optionalParams: unknown[]): void
     debug(message?: unknown, ...optionalParams: unknown[]): void
 }
+export interface iConfigOptions<T> {
+    logger?: iConfigLogger
+    load?: iLoad
+    compile?: iCompile
+    transform?: classTransformer<T>
+    validate?: validator<T>
+}
 
-export class Config<T> extends EventEmitter {
-    constructor(
-        private readonly transform: classTransformer<T>,
-        private readonly logger: iConfigLogger = console,
-        private readonly load: iLoad,
-        private readonly compile: iCompile,
-        private readonly validate?: validator<T>,
-    ) {
+export class Config<T = POJO> extends EventEmitter {
+    constructor(options: iConfigOptions<T> = {}) {
         super()
+        this.logger = options.logger ?? console
+        this.load = options.load ?? Loader(this.logger, [jsonFileLoader, js, ts])
+        this.compile = options.compile ?? Compiler(this.logger, conventional, [json, bool, num])
+        this.transform = options.transform ?? ((c: POJO): T => (c as unknown) as T)
+        this.validate = options.validate ?? ((_1) => {})
     }
 
+    private readonly logger!: iConfigLogger
+    private readonly load!: iLoad
+    private readonly compile!: iCompile
+    private readonly transform!: classTransformer<T>
+    private readonly validate!: validator<T>
     protected scenario: POJO = {}
     protected config!: T
     private buildId = 0
@@ -66,12 +77,16 @@ export class Config<T> extends EventEmitter {
 
         const rawConfig = await this.compile(scenario)
         const transformedConfig = this.transform(rawConfig)
-        this.validate && this.validate(transformedConfig)
+        try {
+            this.validate(transformedConfig)
+        } catch (e) {
+            throw new ConfigurationError(Codes.VALIDATION_ERROR, e, `Config validation failed: ${e.message}`)
+        }
         deepFreeze(transformedConfig)
         this.scenario = scenario
         this.config = transformedConfig
 
-        this.emit('configurationChanged')
+        this.emit('configurationChanged', this)
         const finished = performance.now()
         dequeue()
         this.logger.debug(

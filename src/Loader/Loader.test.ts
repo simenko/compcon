@@ -1,5 +1,5 @@
 import { readdir } from 'fs'
-import Loader from './Loader'
+import { Loader } from './Loader'
 import { Codes, ConfigurationError } from '../ConfigurationError'
 import * as utils from '../utils'
 

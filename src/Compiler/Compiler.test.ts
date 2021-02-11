@@ -1,4 +1,4 @@
-import Compiler, { iCompile } from './Compiler'
+import { Compiler, iCompile } from './Compiler'
 import { iConfigLogger } from '../Config'
 import { json } from './valueTransformers'
 import { get, withTransformers } from './readers'

@@ -3,7 +3,7 @@ import Config from '../src'
 import { ReadonlyAppConfig, validate, transform } from './testConfig/schema'
 
 // With type safety
-const config = Config<ReadonlyAppConfig>({ transform, validate })
+const config = new Config<ReadonlyAppConfig>({ transform, validate })
 
 // Without type safety
 // const config = Config()
