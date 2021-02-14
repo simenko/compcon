@@ -1,4 +1,4 @@
-import { configLeaf, iConfigLogger, tree } from '../../Config'
+import { configLeaf, configValue, iConfigLogger } from '../../Config'
 import { iValueTransformer, composeValueTransformers } from '../valueTransformers'
 import { iConfigGetter } from '../Compiler'
 import { iPathTransformer, identity } from '../pathTransformers'
@@ -10,12 +10,12 @@ export interface iReader {
         path: string,
         logger: iConfigLogger,
         get: iConfigGetter,
-        defaultTransformers?: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[],
-    ): Promise<configLeaf | tree<configLeaf>>
+        defaultTransformers?: iValueTransformer<configValue | undefined>[],
+    ): Promise<configValue>
 }
 
 export interface iReaderCreator {
-    (key?: string | iPathTransformer, valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>): iReader
+    (key?: string | iPathTransformer, valueTransformer?: iValueTransformer<configValue>): iReader
 }
 
 export interface iDefaultReaderCreator {
@@ -25,7 +25,7 @@ export interface iDefaultReaderCreator {
 export function withTransformers(
     reader: iReader,
     pathTransformer: string | iPathTransformer = identity,
-    valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>,
+    valueTransformer?: iValueTransformer<configValue>,
 ): iReader {
     if (reader.name.endsWith(ReaderSuffix)) {
         return reader
@@ -34,7 +34,7 @@ export function withTransformers(
         path: string,
         logger: iConfigLogger,
         get: iConfigGetter,
-        defaultTransformers: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[] = [],
+        defaultTransformers: iValueTransformer<configValue | undefined>[] = [],
     ) {
         const value = await reader(
             typeof pathTransformer === 'string' ? pathTransformer : pathTransformer(path),

@@ -1,6 +1,6 @@
 import { Codes, ConfigurationError } from './ConfigurationError'
 import { get, has } from 'lodash'
-import { Config, configLeaf, iConfigLogger, tree, validator } from './Config'
+import { Config, configTree, configValue, iConfigLogger, validator } from './Config'
 import { iLoad } from './Loader'
 import { iCompile } from './Compiler'
 
@@ -8,19 +8,19 @@ interface iUntypedConfigOptions {
     logger?: iConfigLogger
     load?: iLoad
     compile?: iCompile
-    validate?: validator<tree<configLeaf>>
+    validate?: validator<configTree>
 }
 
-export class UntypedConfig extends Config<tree<configLeaf>> {
+export class UntypedConfig extends Config<configTree> {
     constructor(options: iUntypedConfigOptions = {}) {
         super({
             ...options,
-            transform: (c: tree<configLeaf>): tree<configLeaf> => c,
+            transform: (c: configTree): configTree => c,
             validate: options.validate ?? ((_1) => {}),
         })
     }
 
-    public get(path?: string): configLeaf | tree<configLeaf> {
+    public get(path?: string): configValue {
         if (!this.has(path)) {
             throw new ConfigurationError(Codes.ACCESS_ERROR, { path }, `Could not find path ${path}`)
         }

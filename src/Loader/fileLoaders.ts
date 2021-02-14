@@ -1,7 +1,7 @@
-import { scenario } from '../Config'
+import { scenarioTree } from '../Config'
 
 export interface iFileLoader {
-    (filename: string): Promise<scenario>
+    (filename: string): Promise<scenarioTree>
 }
 
 export const ts: iFileLoader = async function ts(filename) {

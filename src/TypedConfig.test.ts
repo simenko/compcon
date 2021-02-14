@@ -1,4 +1,4 @@
-import { classTransformer, configLeaf, tree, validator } from './Config'
+import { classTransformer, configTree, validator } from './Config'
 import { Codes, ConfigurationError } from './ConfigurationError'
 import { iLoad } from './Loader'
 import { iCompile } from './Compiler'
@@ -12,10 +12,8 @@ const rawConfiguration = { a: { b: { c: 'value', d: null } } }
 const transformedConfiguration = { a: { b: { c: 'transformedValue', d: null } } }
 const mockLoader: jest.MockedFunction<iLoad> = jest.fn(async (_1, _2) => scenario1)
 const mockCompiler: jest.MockedFunction<iCompile> = jest.fn(async (_1) => rawConfiguration)
-const mockTransformer: jest.MockedFunction<classTransformer<tree<configLeaf>>> = jest.fn(
-    (_1) => transformedConfiguration,
-)
-const mockValidator: jest.MockedFunction<validator<tree<configLeaf>>> = jest.fn((_1) => {})
+const mockTransformer: jest.MockedFunction<classTransformer<configTree>> = jest.fn((_1) => transformedConfiguration)
+const mockValidator: jest.MockedFunction<validator<configTree>> = jest.fn((_1) => {})
 
 describe('Configuration building', () => {
     let config

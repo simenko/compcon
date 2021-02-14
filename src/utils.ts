@@ -1,8 +1,8 @@
 import crypto from 'crypto'
 import rawFlatten, { unflatten as rawUnflatten } from 'flat'
 import { merge as _merge, cloneDeep } from 'lodash'
-import { scenario, scenarioLeaf, configLeaf, tree } from './Config'
-import { pendingConfigLeaf } from './Compiler'
+import { scenarioTree, scenarioLeaf, configLeaf, configTree } from './Config'
+import { flatConfig } from './Compiler'
 
 export function deepFreeze(obj: unknown): void {
     if (obj === null) {
@@ -54,12 +54,11 @@ export const parseArgs = (argv: string[]): { [key: string]: configLeaf } =>
         .reduce((args, pair) => ({ ...args, ...pair }), {})
 
 /* eslint-disable no-redeclare */
-export function flatten(obj: tree<configLeaf>): { [key: string]: configLeaf }
-export function flatten(obj: tree<scenarioLeaf>): { [key: string]: scenarioLeaf }
-export function flatten(obj: tree<scenarioLeaf> | tree<configLeaf>): { [key: string]: scenarioLeaf | configLeaf } {
+export function flatten(obj: configTree): { [key: string]: configLeaf }
+export function flatten(obj: scenarioTree): { [key: string]: scenarioLeaf }
+export function flatten(obj: scenarioTree | configTree): { [key: string]: scenarioLeaf | configLeaf } {
     return rawFlatten(obj, { safe: true })
 }
-export const unflatten = (obj: { [key: string]: pendingConfigLeaf }): tree<configLeaf> =>
-    rawUnflatten(obj, { overwrite: true })
-export const merge = (...objs: scenario[]): scenario => _merge({}, ...objs)
-export const clone = (obj: scenario): scenario => cloneDeep(obj)
+export const unflatten = (obj: flatConfig): configTree => rawUnflatten(obj, { overwrite: true })
+export const merge = (...objs: scenarioTree[]): scenarioTree => _merge({}, ...objs)
+export const clone = (obj: scenarioTree): scenarioTree => cloneDeep(obj)

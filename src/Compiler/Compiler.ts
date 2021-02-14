@@ -1,33 +1,34 @@
 import { iDefaultReaderCreator, iReader } from './readers'
 import { iValueTransformer } from './valueTransformers'
-import { configLeaf, iConfigLogger, scenarioLeaf, tree } from '../Config'
+import { configLeaf, configTree, configValue, iConfigLogger, scenarioTree } from '../Config'
 import { ConfigurationError, Codes } from '../ConfigurationError'
 import { flatten, randomString, scheduleTimeout, unflatten } from '../utils'
 
 const FakeSubtreeRoot = randomString()
-export type pendingConfigLeaf = configLeaf | ReturnType<iReader>
+type pendingConfigLeaf = configLeaf | ReturnType<iReader>
+export type flatConfig = { [key: string]: pendingConfigLeaf }
 
 interface iMissingPathsTracker {
     [key: string]: (() => void)[]
 }
 
 export interface iConfigGetter {
-    (path: string): Promise<configLeaf | tree<configLeaf>>
+    (path: string): Promise<configValue>
 }
 
 export interface iCompile {
-    (scenario: tree<scenarioLeaf>): Promise<tree<configLeaf>>
+    (scenario: scenarioTree): Promise<configTree>
 }
 
 export function Compiler(
     logger: iConfigLogger,
     defaultReaderCreator: iDefaultReaderCreator,
-    defaultTransformers: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[],
+    defaultTransformers: iValueTransformer<configValue | undefined>[],
     compilationTimeout = 3000,
 ) {
-    return async function compile(scenario: tree<scenarioLeaf>): Promise<tree<configLeaf>> {
+    return async function compile(scenario: scenarioTree): Promise<configTree> {
         const flatScenario = flatten(scenario)
-        const config: { [key: string]: pendingConfigLeaf } = {}
+        const config: flatConfig = {}
         const missingPaths: iMissingPathsTracker = {}
 
         Object.entries(flatScenario).forEach(([path, valueOrReader]) => {
@@ -62,6 +63,7 @@ export function Compiler(
         await Promise.race([
             Promise.all(Object.values(config)).then(() => timeoutPromise.cancel()),
             timeoutPromise.catch(() => {
+                // TODO: distinguish detect circular dependencies and wrong paths from hanging readers
                 const missing = Object.keys(missingPaths)
                 const unresolved = Object.entries(config)
                     .filter(([_, value]) => value && typeof (value as ReturnType<iReader>).then === 'function')
@@ -80,12 +82,7 @@ export function Compiler(
         return unflatten(config)
     }
 
-    function insertValue(
-        path: string,
-        value: configLeaf | tree<configLeaf> | configLeaf[],
-        config: { [key: string]: pendingConfigLeaf },
-        missingPaths: iMissingPathsTracker,
-    ) {
+    function insertValue(path: string, value: configValue, config: flatConfig, missingPaths: iMissingPathsTracker) {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
             Object.entries(flatten(value)).forEach(([subPath, value]) =>
                 insertValue(path + '.' + subPath, value, config, missingPaths),
@@ -99,10 +96,7 @@ export function Compiler(
         }
     }
 
-    function createGetter(
-        config: { [key: string]: pendingConfigLeaf },
-        missingPaths: iMissingPathsTracker,
-    ): iConfigGetter {
+    function createGetter(config: flatConfig, missingPaths: iMissingPathsTracker): iConfigGetter {
         return async (path = '') => {
             let matchingEntries = Object.entries(config).filter(([key]) => key.startsWith(path))
             if (!matchingEntries.length) {
@@ -112,7 +106,7 @@ export function Compiler(
                 await pathWatcher
                 matchingEntries = Object.entries(config).filter(([key]) => key.startsWith(path))
             }
-            const result: tree<configLeaf> = unflatten(
+            const result: configTree = unflatten(
                 matchingEntries
                     .map<[string, pendingConfigLeaf]>(([key, value]) => [key.replace(path, FakeSubtreeRoot), value])
                     .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),

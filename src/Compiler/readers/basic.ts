@@ -2,7 +2,7 @@ import { iValueTransformer } from '../valueTransformers'
 import { withTransformers, iReaderCreator, iDefaultReaderCreator } from './common'
 import { parseArgs } from '../../utils'
 import { argPathTransformer, envPathTransformer, iPathTransformer } from '../pathTransformers'
-import { configLeaf, tree } from '../../Config'
+import { configLeaf, configValue } from '../../Config'
 
 export const literal: iDefaultReaderCreator = (value: configLeaf) => {
     return withTransformers(async function literal() {
@@ -12,10 +12,10 @@ export const literal: iDefaultReaderCreator = (value: configLeaf) => {
 
 export const env: iReaderCreator = (
     envVar: iPathTransformer | string = envPathTransformer,
-    valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>,
+    valueTransformer?: iValueTransformer<configValue>,
 ) => {
     return withTransformers(
-        async function env(path): Promise<configLeaf | tree<configLeaf>> {
+        async function env(path): Promise<configValue> {
             return process.env[path] || null
         },
         envVar,
@@ -25,7 +25,7 @@ export const env: iReaderCreator = (
 
 export const arg: iReaderCreator = (
     argName: iPathTransformer | string = argPathTransformer,
-    valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>,
+    valueTransformer?: iValueTransformer<configValue>,
 ) => {
     return withTransformers(
         async function arg(path): Promise<configLeaf> {
@@ -36,12 +36,9 @@ export const arg: iReaderCreator = (
     )
 }
 
-export const get: iReaderCreator = (
-    configPath?,
-    valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>,
-) => {
+export const get: iReaderCreator = (configPath?, valueTransformer?: iValueTransformer<configValue>) => {
     return withTransformers(
-        async function get(path, _, get): Promise<configLeaf | tree<configLeaf>> {
+        async function get(path, _, get): Promise<configValue> {
             return get(path)
         },
         configPath,

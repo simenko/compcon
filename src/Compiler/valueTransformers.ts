@@ -1,11 +1,11 @@
 import { toNumber as _toNumber } from 'lodash'
-import { configLeaf, tree } from '../Config'
+import { configValue } from '../Config'
 
 export interface iValueTransformer<T> {
-    (value: configLeaf | tree<configLeaf>): T
+    (value: configValue): T
 }
 
-export const json: iValueTransformer<configLeaf | tree<configLeaf> | undefined> = (value) => {
+export const json: iValueTransformer<configValue | undefined> = (value) => {
     if (typeof value !== 'string') {
         return undefined
     }
@@ -41,8 +41,8 @@ export const num: iValueTransformer<number | undefined> = (value) => {
 }
 
 export const composeValueTransformers: (
-    ...transformers: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[]
-) => iValueTransformer<configLeaf | tree<configLeaf>> = (...transformers) => (value: configLeaf | tree<configLeaf>) => {
+    ...transformers: iValueTransformer<configValue | undefined>[]
+) => iValueTransformer<configValue> = (...transformers) => (value: configValue) => {
     for (const t of [...transformers]) {
         const transformedValue = t(value)
         if (transformedValue !== undefined) {

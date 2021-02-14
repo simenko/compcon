@@ -9,9 +9,12 @@ import { iReader } from './Compiler/readers'
 export type tree<LeafType> = { [key: string]: LeafType | tree<LeafType> }
 export type configLeaf = string | number | boolean | null | configLeaf[]
 export type scenarioLeaf = configLeaf | iReader
-export type scenario = tree<scenarioLeaf>
+export type configTree = tree<configLeaf>
+export type scenarioTree = tree<scenarioLeaf>
+export type configValue = configLeaf | configTree
+export type scenarioValue = scenarioLeaf | scenarioTree
 
-export type classTransformer<T> = (rawConfig: tree<configLeaf>) => T
+export type classTransformer<T> = (rawConfig: configTree) => T
 export type validator<T> = (config: T) => void
 
 export interface iConfigLogger {
@@ -26,7 +29,7 @@ export interface iConfigOptions<T> {
     validate: validator<T>
 }
 
-export class Config<T = tree<configLeaf>> extends EventEmitter {
+export class Config<T = configTree> extends EventEmitter {
     constructor(options: iConfigOptions<T>) {
         super()
         this.logger = options.logger ?? console
@@ -41,20 +44,20 @@ export class Config<T = tree<configLeaf>> extends EventEmitter {
     private readonly compile!: iCompile
     private readonly transform!: classTransformer<T>
     private readonly validate!: validator<T>
-    protected scenario: scenario = {}
+    protected scenario: scenarioTree = {}
     protected config!: T
     private buildId = 0
     private buildQueue: Record<number, Promise<void>> = {}
 
-    public async create(layers: (string | scenario)[], configDirectory?: string): Promise<this> {
+    public async create(layers: (string | scenarioTree)[], configDirectory?: string): Promise<this> {
         return this.build(layers, configDirectory)
     }
 
-    public async update(layers: (string | scenario)[], configDirectory?: string): Promise<this> {
+    public async update(layers: (string | scenarioTree)[], configDirectory?: string): Promise<this> {
         return this.build([clone(this.scenario), ...layers], configDirectory)
     }
 
-    private async build(layers: (string | scenario)[] = [], configDirectory: string = ''): Promise<this> {
+    private async build(layers: (string | scenarioTree)[] = [], configDirectory: string = ''): Promise<this> {
         const enqueued = performance.now()
         const dequeue = await this.enqueueBuild()
         const started = performance.now()

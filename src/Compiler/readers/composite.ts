@@ -2,11 +2,11 @@ import { iValueTransformer } from '../valueTransformers'
 import { ConfigurationError, Codes } from '../../ConfigurationError'
 import { iDefaultReaderCreator, iReader, withTransformers } from './common'
 import { arg, env } from './basic'
-import { configLeaf, tree } from '../../Config'
+import { configValue } from '../../Config'
 
 export const firstOf = (
-    readersOrValues: (configLeaf | tree<configLeaf> | iReader)[],
-    valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>,
+    readersOrValues: (configValue | iReader)[],
+    valueTransformer?: iValueTransformer<configValue>,
 ) => {
     if (!Array.isArray(readersOrValues)) {
         throw new ConfigurationError(
@@ -48,7 +48,7 @@ export const firstOf = (
     )
 }
 
-export const conventional: iDefaultReaderCreator = (defaultValue: configLeaf | tree<configLeaf>) =>
+export const conventional: iDefaultReaderCreator = (defaultValue: configValue) =>
     withTransformers(async function conventional(path, logger, get) {
         return firstOf([arg(), env(), defaultValue])(path, logger, get)
     })

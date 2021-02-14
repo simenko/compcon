@@ -1,7 +1,7 @@
 import { withTransformers, iValueTransformer } from '../src'
-import { configLeaf, tree } from '../src/Config'
+import { configValue } from '../src/Config'
 
-export const vault = (vaultPath: string, valueTransformer?: iValueTransformer<configLeaf | tree<configLeaf>>) => {
+export const vault = (vaultPath: string, valueTransformer?: iValueTransformer<configValue>) => {
     return withTransformers(
         async function vault(path: string, logger, get) {
             const vaultUrl = await get('vault.url')

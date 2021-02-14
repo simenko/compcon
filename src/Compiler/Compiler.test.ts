@@ -1,7 +1,7 @@
 import { Compiler, iCompile } from './Compiler'
 import { iConfigLogger } from '../Config'
 import { json } from './valueTransformers'
-import { get, withTransformers } from './readers'
+import { get, iReader, withTransformers } from './readers'
 import { Codes, ConfigurationError } from '../ConfigurationError'
 
 const mockLogger: iConfigLogger = {
@@ -116,7 +116,7 @@ describe('Compiler', () => {
         })
 
         it('Should throw meaningful error if a path could not be resolved due to reader timeout', async () => {
-            const hungReader = () => new Promise(() => {})
+            const hungReader: iReader = () => new Promise(() => {})
             const timeoutScenario = {
                 a: hungReader,
             }
