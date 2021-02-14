@@ -78,6 +78,6 @@ describe('Example untyped configurations', () => {
             NODE_ENV: 'production',
         }
         const configuration = await config.create(['base', 'override'], path.resolve(__dirname, 'testConfig'))
-        expect(configuration.get('we.need.to.go.deeper')).toEqual('db.urlvaultUrlFromEnv_override')
+        expect(configuration.get('we.need.to.go.deeper')).toEqual('db.urloverrideVaultUrl_override')
     })
 })

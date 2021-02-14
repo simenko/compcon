@@ -1,10 +1,9 @@
-import { bool, Compiler, conventional, iCompile, json, num } from './Compiler'
+import { bool, Compiler, literal, iCompile, iReader, json, num } from './Compiler'
 import { iLoad, js, json as jsonFileLoader, Loader, ts } from './Loader'
 import { performance } from 'perf_hooks'
 import { EventEmitter } from 'events'
 import { clone, deepFreeze } from './utils'
 import { Codes, ConfigurationError } from './ConfigurationError'
-import { iReader } from './Compiler/readers'
 
 export type tree<LeafType> = { [key: string]: LeafType | tree<LeafType> }
 export type configLeaf = string | number | boolean | null | configLeaf[]
@@ -34,7 +33,7 @@ export class Config<T = configTree> extends EventEmitter {
         super()
         this.logger = options.logger ?? console
         this.load = options.load ?? Loader(this.logger, [jsonFileLoader, js, ts])
-        this.compile = options.compile ?? Compiler(this.logger, conventional, [json, bool, num])
+        this.compile = options.compile ?? Compiler(this.logger, literal, [json, bool, num])
         this.transform = options.transform
         this.validate = options.validate
     }
