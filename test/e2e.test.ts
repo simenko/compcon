@@ -69,6 +69,15 @@ describe('Example untyped configurations', () => {
             ['base', process.env.NODE_ENV ?? 'development'],
             path.resolve(__dirname, 'testConfig'),
         )
-        console.log(configuration.get())
+        expect(configuration.get('db.url')).toEqual('db.urlvaultUrlFromEnv')
+    })
+
+    it('Should resolve complex dependencies', async () => {
+        process.env = {
+            VAULT: '{"url":"vaultUrlFromEnv"}',
+            NODE_ENV: 'production',
+        }
+        const configuration = await config.create(['base', 'override'], path.resolve(__dirname, 'testConfig'))
+        expect(configuration.get('we.need.to.go.deeper')).toEqual('db.urlvaultUrlFromEnv_override')
     })
 })

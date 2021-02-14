@@ -2,5 +2,8 @@
   "testPathIgnorePatterns": [
     "/node_modules/",
     "/dist/"
+  ],
+  "coveragePathIgnorePatterns": [
+    "/test/"
   ]
 }

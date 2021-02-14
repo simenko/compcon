@@ -1,8 +1,20 @@
+import { vault } from '../mockReaders'
+import { get } from '../../src'
+
 export default {
     db: {
-        url: null,
+        url: vault('db.url'),
         user: 'root',
         password: '',
     },
-    vault: '{"url":"111111111111111"}',
+    vault: '{"url":"overrideVaultUrl"}',
+    we: {
+        need: {
+            to: {
+                go: {
+                    deeper: get('db.url', (v) => v + '_override'),
+                },
+            },
+        },
+    },
 }

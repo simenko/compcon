@@ -42,7 +42,7 @@ export function Loader(logger: iConfigLogger, fileLoaders: iFileLoader[]) {
                         {
                             layerName: basenameOrSubtree,
                         },
-                        `Could not find a layer ${basenameOrSubtree}, skipping.`,
+                        `Could not find layer ${basenameOrSubtree}, skipping.`,
                     ),
                 )
                 return {}

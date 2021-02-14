@@ -1,7 +1,8 @@
-import { classTransformer, Config, configLeaf, tree, validator } from './Config'
+import { classTransformer, configLeaf, tree, validator } from './Config'
 import { Codes, ConfigurationError } from './ConfigurationError'
 import { iLoad } from './Loader'
 import { iCompile } from './Compiler'
+import { TypedConfig } from './TypedConfig'
 
 const layer1 = { a: { b: { c: 'reader1' } } }
 const layer2 = { a: { b: { c: 'reader2', d: null } } }
@@ -19,7 +20,7 @@ const mockValidator: jest.MockedFunction<validator<tree<configLeaf>>> = jest.fn(
 describe('Configuration building', () => {
     let config
     beforeEach(() => {
-        config = new Config({
+        config = new TypedConfig({
             logger: console,
             load: mockLoader,
             compile: mockCompiler,
@@ -60,22 +61,19 @@ describe('Configuration building', () => {
         config.on('configurationChanged', mockHandler)
         const firstConfigPromise = config.create([layer1])
         const secondConfigPromise = config.create([layer2], 'test')
-        await firstConfigPromise
-        // Spy on console.debug instead????
-        // const firstConfig = (await firstConfigPromise).get()
+        const firstConfig = (await firstConfigPromise).getClass()
         mockTransformer.mockImplementationOnce((_1) => ({
             x: 1,
         }))
-        // expect(firstConfig).toEqual(transformedConfiguration)
+        expect(firstConfig).toEqual(transformedConfiguration)
         expect(mockLoader).toHaveBeenCalledWith([layer1], '')
         expect(mockLoader).toHaveBeenCalledTimes(1)
         expect(mockCompiler).toHaveBeenCalledTimes(1)
         expect(mockTransformer).toHaveBeenCalledTimes(1)
         expect(mockValidator).toHaveBeenCalledTimes(1)
         expect(mockHandler).toHaveBeenCalledTimes(1)
-        await secondConfigPromise
-        // const secondConfig = (await secondConfigPromise).get()
-        // expect(secondConfig).toEqual({ x: 1 })
+        const secondConfig = (await secondConfigPromise).getClass()
+        expect(secondConfig).toEqual({ x: 1 })
         expect(mockLoader.mock.calls[1]).toEqual([[layer2], 'test'])
         expect(mockLoader).toHaveBeenCalledTimes(2)
         expect(mockCompiler).toHaveBeenCalledTimes(2)
