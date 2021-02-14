@@ -4,7 +4,6 @@ import { performance } from 'perf_hooks'
 import { EventEmitter } from 'events'
 import { clone, deepFreeze } from './utils'
 import { Codes, ConfigurationError } from './ConfigurationError'
-import { get, has } from 'lodash'
 import { iReader } from './Compiler/readers'
 
 export type tree<LeafType> = { [key: string]: LeafType | tree<LeafType> }
@@ -23,18 +22,18 @@ export interface iConfigOptions<T> {
     logger?: iConfigLogger
     load?: iLoad
     compile?: iCompile
-    transform?: classTransformer<T>
-    validate?: validator<T>
+    transform: classTransformer<T>
+    validate: validator<T>
 }
 
 export class Config<T = tree<configLeaf>> extends EventEmitter {
-    constructor(options: iConfigOptions<T> = {}) {
+    constructor(options: iConfigOptions<T>) {
         super()
         this.logger = options.logger ?? console
         this.load = options.load ?? Loader(this.logger, [jsonFileLoader, js, ts])
         this.compile = options.compile ?? Compiler(this.logger, conventional, [json, bool, num])
-        this.transform = options.transform ?? ((c: tree<configLeaf>): T => (c as unknown) as T)
-        this.validate = options.validate ?? ((_1) => {})
+        this.transform = options.transform
+        this.validate = options.validate
     }
 
     private readonly logger!: iConfigLogger
@@ -46,21 +45,6 @@ export class Config<T = tree<configLeaf>> extends EventEmitter {
     protected config!: T
     private buildId = 0
     private buildQueue: Record<number, Promise<void>> = {}
-
-    public getClass(): T {
-        return this.config
-    }
-
-    public get(path?: string): configLeaf | tree<configLeaf> {
-        if (!this.has(path)) {
-            throw new ConfigurationError(Codes.ACCESS_ERROR, { path }, `Could not find path ${path}`)
-        }
-        return !path ? this.config : get(this.config, path)
-    }
-
-    public has(path?: string) {
-        return !path || has(this.config, path)
-    }
 
     public async create(layers: (string | scenario)[], configDirectory?: string): Promise<this> {
         return this.build(layers, configDirectory)

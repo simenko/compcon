@@ -53,14 +53,14 @@ describe('Composite readers', () => {
         })
 
         it('Should check args first', async () => {
-            process.argv.push('--a=testArg')
+            process.argv = ['', '', '--a=testArg']
             const reader = conventional('default')
             const value = await reader('a', console, mockGet)
             expect(value).toEqual('testArg')
         })
 
         it('Should check env if a value could not be found in args', async () => {
-            process.env.A = 'testEnv'
+            process.env = { A: 'testEnv' }
             const reader = conventional('default')
             const value = await reader('a', console, mockGet)
             expect(value).toEqual('testEnv')

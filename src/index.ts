@@ -1,4 +1,6 @@
-export { iConfigLogger, validator, classTransformer, Config as default } from './Config'
+export { iConfigLogger, validator, classTransformer } from './Config'
+export { UntypedConfig } from './UntypedConfig'
+export { TypedConfig } from './TypedConfig'
 export { iFileLoader } from './Loader/fileLoaders'
 export { iValueTransformer, json, bool, num } from './Compiler/valueTransformers'
 export { iPathTransformer } from './Compiler/pathTransformers'

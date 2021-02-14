@@ -1,0 +1,8 @@
+{
+    "appName": "test",
+    "db": {
+      "url":  "baseDbUrl",
+      "user": "baseDbUser",
+      "password": "baseDbPassword"
+    }
+}

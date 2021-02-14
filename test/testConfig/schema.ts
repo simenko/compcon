@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 
-// Alternatives: io-ts, https://github.com/JohnWeisz/TypedJSON
-import { IsString, ValidateNested, validateSync } from 'class-validator'
+// Alternatives: https://github.com/gcanti/io-ts, https://github.com/JohnWeisz/TypedJSON
+import { IsOptional, IsString, ValidateNested, validateSync } from 'class-validator'
 import { plainToClass, Type } from 'class-transformer'
 import { validator, classTransformer, ConfigurationError, Codes } from '../../src'
 import { configLeaf, tree } from '../../src/Config'
@@ -32,7 +32,8 @@ class AppConfig {
 
     @Type(() => VaultConfiguration)
     @ValidateNested()
-    vault!: Readonly<VaultConfiguration>
+    @IsOptional()
+    vault?: Readonly<VaultConfiguration>
 }
 
 export type ReadonlyAppConfig = Readonly<AppConfig>

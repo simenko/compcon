@@ -24,7 +24,7 @@ describe('Basic readers', () => {
         })
 
         it('Should read values from process.env', async () => {
-            process.env.A_B = 'valueFromA_B'
+            process.env = { A_B: 'valueFromA_B' }
             const reader = env()
             const value = await reader('a.b', console, mockGet)
             expect(value).toEqual(process.env.A_B)
@@ -46,7 +46,7 @@ describe('Basic readers', () => {
         })
 
         it('Should read values from args', async () => {
-            process.argv.push('--a-b=valueFrom--a-b')
+            process.argv = ['', '', '--a-b=valueFrom--a-b']
             const reader = arg()
             const value = await reader('a.b', console, mockGet)
             expect(value).toEqual('valueFrom--a-b')

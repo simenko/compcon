@@ -23,7 +23,7 @@ export function Compiler(
     logger: iConfigLogger,
     defaultReaderCreator: iDefaultReaderCreator,
     defaultTransformers: iValueTransformer<configLeaf | tree<configLeaf> | undefined>[],
-    compilationTimeout = 5000,
+    compilationTimeout = 3000,
 ) {
     return async function compile(scenario: tree<scenarioLeaf>): Promise<tree<configLeaf>> {
         const flatScenario = flatten(scenario)
