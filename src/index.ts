@@ -1,4 +1,4 @@
-export { iConfigLogger, validator, classTransformer } from './Config'
+export { iConfigLogger, validator, classTransformer, configTree } from './Config'
 export { UntypedConfig } from './UntypedConfig'
 export { TypedConfig } from './TypedConfig'
 export { iFileLoader } from './Loader/fileLoaders'
