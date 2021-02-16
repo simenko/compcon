@@ -36,7 +36,7 @@ export const arg: iReaderCreator = (
     )
 }
 
-export const get: iReaderCreator = (configPath?, valueTransformer?: iValueTransformer<configValue>) => {
+export const get: iReaderCreator = (configPath, valueTransformer?: iValueTransformer<configValue>) => {
     return withTransformers(
         async function get(path, _, get): Promise<configValue> {
             return get(path)

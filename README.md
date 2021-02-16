@@ -10,7 +10,7 @@ The best way to show how all these requirements are met in the Compcon is to pro
   trivial ones to complex.
   
 ## Usage examples
-### Ridiculously trivial example
+### Trivial example
 ```javascript
 // index.js
 const { UntypedConfig }  = require('compcon')
@@ -63,18 +63,24 @@ const config = await new UntypedConfig().create([
     'override',
 ], path.resolve(__dirname, 'config'))
 ```
-There are no default or conventional layer names, or default configuration directory. It is a deliberate decision - couple of keystrokes saved due to an implicit naming conventions are not worth the readability and unambiguity of an explicit solution.
+Base layer contains all values that do not depend on deployment environment. Environment-specific layer name is caluclated dynamically. In this very basic example this is just NODE_ENV, but you may build much more complex layer structure based on many variables, like ones mentioned in `node-config` package [documetation](https://github.com/lorenwest/node-config/wiki/Configuration-Files). The last one is the override layer - local machine-specific settings, which should not be committed to the application repository.
 
-###  normal, complex examples
+There are no default or conventional layer names, or default configuration directory. It is a deliberate decision - couple of keystrokes saved due to an implicit naming conventions are not worth the readability and expressiveness of an explicit solution.
+
+### Dynamic configurations
+
+###  Complex examples (if needed)
 TBD
 
-## Basic concepts
-The configuration is composed of several *layers* which are stacked upon each other just like image layers in Photoshop or video layers in a compositing software - top layers "shadow" overlapping parts of lower layers. Physically, each layer is a js, ts, json, any other file or even plain object literal, describing some logical part of the configuration.
+## Logging - chicken and egg problem, security
 
-Typical application has at least three layers:
-1. Base layer, where reside all values that do not depend on deployment environment.
-2. Deployment-specific layer (test, staging, prod, development etc.)
-3. Override layer - local machine-specific settings, which are not committed to the application repository.
+
+
+
+
+
+
+
 
 Layers are loaded one by one and composed into a configuration *scenario*. Any non-trivial application requires the ability to dynamically load some configuration values and may have some values, dependent of other configuration values. It is achieved with the help of *readers*. Readers are async functions that retrieve actual values after configuration scenario is loaded. During the compilation phase, all readers are called and replaced with the actual values in the configuration tree. Then the tree is frozen and is ready to use.
 
